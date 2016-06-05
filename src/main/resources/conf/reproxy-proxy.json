@@ -1,0 +1,14 @@
+{
+  "network": {
+    "port": 8080,
+    "host": "0.0.0.0"
+  },
+  "nextTunnelProxy": {
+    "port": 7070,
+    "host": "0.0.0.0"
+  },
+  "nextHttpProxy": {
+    "port": 7070,
+    "host": "0.0.0.0"
+  }
+}

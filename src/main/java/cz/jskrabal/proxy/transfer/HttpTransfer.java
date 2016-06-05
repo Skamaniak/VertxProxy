@@ -1,73 +1,84 @@
 package cz.jskrabal.proxy.transfer;
 
-import cz.jskrabal.proxy.util.IdUtils;
-import io.vertx.core.MultiMap;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import cz.jskrabal.proxy.config.ConfigurationParameter;
+import cz.jskrabal.proxy.config.ProxyConfiguration;
+import cz.jskrabal.proxy.config.pojo.NetworkSettings;
+import cz.jskrabal.proxy.util.ProxyUtils;
+import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import io.vertx.core.http.HttpClient;
 import io.vertx.core.http.HttpClientRequest;
 import io.vertx.core.http.HttpClientResponse;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpServerRequest;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Created by janskrabal on 01/06/16.
  */
-public class HttpTransfer implements Transfer {
-    private static final Logger LOGGER = LoggerFactory.getLogger(HttpTransfer.class);
-    private static final String ACCEPT_ENCODING_CHUNKED = "chunked";
-    private static final String HEADER_TRANSFER_ENCODING = "Transfer-Encoding";
+public class HttpTransfer extends Transfer {
+	private static final Logger LOGGER = LoggerFactory.getLogger(HttpTransfer.class);
 
-    private final Vertx vertx;
-    private final HttpServerRequest upstreamRequest;
-    private final String id = IdUtils.generateId();
+	private final Vertx vertx;
+	private final ProxyConfiguration configuration;
+	private final String id = ProxyUtils.generateId();
 
-    public HttpTransfer(Vertx vertx, HttpServerRequest upstreamRequest) {
-        this.vertx = vertx;
-        this.upstreamRequest = upstreamRequest;
-    }
+	public HttpTransfer(Vertx vertx, ProxyConfiguration configuration, HttpServerRequest upstreamRequest) {
+		super(upstreamRequest);
+		this.vertx = vertx;
+		this.configuration = configuration;
+	}
 
-    @Override
-    public void start() {
-        HttpClient client = vertx.createHttpClient();
-        HttpMethod method = upstreamRequest.method();
-        String uri = upstreamRequest.uri();
+	@Override
+	public void start() {
+		HttpClient client = vertx.createHttpClient();
+		HttpMethod method = upstreamRequest.method();
+		String uri = upstreamRequest.uri();
 
-        LOGGER.debug("HttpTransfer {} proxying request {} {}", id, method, uri);
-        HttpClientRequest downstreamRequest = client.requestAbs(method, uri, downstreamResponse -> {
-            int responseCode = downstreamResponse.statusCode();
-            LOGGER.debug("HttpTransfer {} proxying response with code {}", id, responseCode);
-            upstreamRequest.response().setStatusCode(responseCode);
-            upstreamRequest.response().setChunked(isChunked(downstreamResponse));
-            upstreamRequest.response().headers().setAll(downstreamResponse.headers());
+		NetworkSettings nextProxy = configuration.getValue(ConfigurationParameter.NEXT_HTTP_PROXY,
+				NetworkSettings.class);
+		HttpClientRequest downstreamRequest;
 
-            downstreamResponse.handler(data -> {
-                LOGGER.debug("HttpTransfer {} proxying response data (length {})", id, data.length());
-                upstreamRequest.response().write(data);
-            });
-            downstreamResponse.endHandler((v) -> upstreamRequest.response().end());
-        });
+		if (nextProxy != null) {
+			LOGGER.debug("'{}' proxying request '{}' '{}' to next HTTP proxy {}", id, method, uri, nextProxy);
+			//TODO handle connection refused throwable
+			downstreamRequest = client.request(method, nextProxy.getPort(), nextProxy.getHost(), uri,
+					downstreamResponseHandler());
+		} else {
+			LOGGER.debug("'{}' proxying request '{}' '{}'", id, method, uri);
+			//TODO handle connection refused throwable
+			downstreamRequest = client.requestAbs(method, uri, downstreamResponseHandler());
+		}
+		setClientRequestByServerRequest(downstreamRequest, upstreamRequest);
 
-        downstreamRequest.setChunked(isChunked(upstreamRequest));
-        downstreamRequest.headers().setAll(upstreamRequest.headers());
-        upstreamRequest.handler(data -> {
-            LOGGER.debug("HttpTransfer {} proxying request data (length {})", id, data.length());
-            downstreamRequest.write(data);
-        });
-        upstreamRequest.endHandler((v) -> downstreamRequest.end());
-    }
+		upstreamRequest.handler(data -> {
+			LOGGER.debug("'{}' proxying request data (length '{}')", id, data.length());
+			downstreamRequest.write(data);
+		});
+		upstreamRequest.endHandler((v) -> {
+			LOGGER.trace("'{}' closed (up)", id);
+			downstreamRequest.end();
+		});
+	}
 
-    private static boolean isChunked(HttpServerRequest request) {
-        return isChunked(request.headers());
-    }
+	private Handler<HttpClientResponse> downstreamResponseHandler() {
+		return downstreamResponse -> {
+			int responseCode = downstreamResponse.statusCode();
+			LOGGER.debug("'{}' proxying response with code '{}'", id, responseCode);
 
-    private static boolean isChunked(HttpClientResponse response) {
-        return isChunked(response.headers());
-    }
+			setServerResponseByClientResponse(upstreamRequest.response(), downstreamResponse);
 
-    private static boolean isChunked(MultiMap headers) {
-        String acceptEncoding = headers.get(HEADER_TRANSFER_ENCODING);
-        return ACCEPT_ENCODING_CHUNKED.equals(acceptEncoding);
-    }
+			downstreamResponse.handler(data -> {
+				LOGGER.debug("'{}' proxying response data (length '{}')", id, data.length());
+				upstreamRequest.response().write(data);
+			});
+
+			downstreamResponse.endHandler((v) -> {
+				LOGGER.trace("'{}' closed (down)", id);
+				upstreamRequest.response().end();
+			});
+		};
+	}
 }

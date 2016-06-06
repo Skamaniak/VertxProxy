@@ -39,28 +39,26 @@ public class HttpTransfer extends Transfer {
 
 		NetworkSettings nextProxy = configuration.getValue(ConfigurationParameter.NEXT_HTTP_PROXY,
 				NetworkSettings.class);
-		HttpClientRequest downstreamRequest;
 
+		HttpClientRequest downstreamRequest;
 		if (nextProxy != null) {
 			LOGGER.debug("'{}' proxying request '{}' '{}' to next HTTP proxy {}", id, method, uri, nextProxy);
-			//TODO handle connection refused throwable
 			downstreamRequest = client.request(method, nextProxy.getPort(), nextProxy.getHost(), uri,
 					downstreamResponseHandler());
 		} else {
 			LOGGER.debug("'{}' proxying request '{}' '{}'", id, method, uri);
-			//TODO handle connection refused throwable
 			downstreamRequest = client.requestAbs(method, uri, downstreamResponseHandler());
 		}
-		setClientRequestByServerRequest(downstreamRequest, upstreamRequest);
 
-		upstreamRequest.handler(data -> {
-			LOGGER.debug("'{}' proxying request data (length '{}')", id, data.length());
-			downstreamRequest.write(data);
+		downstreamRequest.exceptionHandler(throwable -> {
+			LOGGER.warn("{} request '{}' '{}' has failed. Responding by error to the client's HTTP request",
+					id, method, uri);
+
+			respondConnectionFailed(throwable);
 		});
-		upstreamRequest.endHandler((v) -> {
-			LOGGER.trace("'{}' closed (up)", id);
-			downstreamRequest.end();
-		});
+
+		configureClientRequestByServerRequest(downstreamRequest, upstreamRequest);
+		createRequestHandler(downstreamRequest);
 	}
 
 	private Handler<HttpClientResponse> downstreamResponseHandler() {
@@ -68,17 +66,32 @@ public class HttpTransfer extends Transfer {
 			int responseCode = downstreamResponse.statusCode();
 			LOGGER.debug("'{}' proxying response with code '{}'", id, responseCode);
 
-			setServerResponseByClientResponse(upstreamRequest.response(), downstreamResponse);
-
-			downstreamResponse.handler(data -> {
-				LOGGER.debug("'{}' proxying response data (length '{}')", id, data.length());
-				upstreamRequest.response().write(data);
-			});
-
-			downstreamResponse.endHandler((v) -> {
-				LOGGER.trace("'{}' closed (down)", id);
-				upstreamRequest.response().end();
-			});
+			configureServerResponseByClientResponse(upstreamRequest.response(), downstreamResponse);
+			createResponseHandlers(downstreamResponse);
 		};
+	}
+
+	private void createResponseHandlers(HttpClientResponse downstreamResponse) {
+		downstreamResponse.handler(data -> {
+            LOGGER.debug("'{}' proxying response data (length '{}')", id, data.length());
+            upstreamRequest.response().write(data);
+        });
+
+		downstreamResponse.endHandler(voidEvent -> {
+            LOGGER.debug("'{}' ended (downstream)", id);
+            upstreamRequest.response().end();
+        });
+	}
+
+	private void createRequestHandler(HttpClientRequest downstreamRequest) {
+		upstreamRequest.handler(data -> {
+			LOGGER.debug("'{}' proxying request data (length '{}')", id, data.length());
+			downstreamRequest.write(data);
+		});
+
+		upstreamRequest.endHandler(voidEvent -> {
+			LOGGER.debug("'{}' ended (upstream)", id);
+			downstreamRequest.end();
+		});
 	}
 }

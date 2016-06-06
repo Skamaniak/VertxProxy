@@ -61,10 +61,10 @@ public class TunnelTransfer extends Transfer {
                 LOGGER.debug("{} connection to the remote proxy {} has failed ({} {})", id, nextTunnelProxy,
                         downstreamResponse.statusCode(), downstreamResponse.statusMessage());
 
-                setServerResponseByClientResponse(upstreamRequest.response(), downstreamResponse).end();
+                configureServerResponseByClientResponse(upstreamRequest.response(), downstreamResponse).end();
             }
         }, throwable -> {
-            LOGGER.warn("{} connection to the remote proxy {} has failed. Responding by status 404 to the clients " +
+            LOGGER.warn("{} connection to the remote proxy {} has failed. Responding by error to the client's " +
 					"connect request", id, nextTunnelProxy, throwable);
 
             respondConnectionFailed(throwable);
@@ -85,7 +85,8 @@ public class TunnelTransfer extends Transfer {
 		HttpClientRequest downstreamConnectRequest = client.request(HttpMethod.CONNECT, nextProxySettings.getPort(),
 				nextProxySettings.getHost(), upstreamRequest.uri(), responseHandler);
 
-		setClientRequestByServerRequest(downstreamConnectRequest, upstreamRequest).exceptionHandler(exceptionHandler)
+		configureClientRequestByServerRequest(downstreamConnectRequest, upstreamRequest)
+				.exceptionHandler(exceptionHandler)
 				.end();
 	}
 
@@ -100,7 +101,7 @@ public class TunnelTransfer extends Transfer {
 				tunnelTo(event.result());
 			} else {
 				LOGGER.warn("'{}' connection to the remote server has failed. "
-						+ "Responding by status 404 to the clients connect request ({})", id, event.cause());
+						+ "Responding by error to the client's connect request ({})", id, event.cause());
 				respondConnectionFailed(event.cause());
 			}
 		});
@@ -111,8 +112,8 @@ public class TunnelTransfer extends Transfer {
 
 		NetSocket upstreamSocket = upstreamRequest.netSocket();
 		upstreamSocket.pause();
-		createDataHandlers(upstreamSocket, downstreamSocket);
-		createEndHandlers(upstreamSocket, downstreamSocket);
+		createUpstreamHandlers(upstreamSocket, downstreamSocket);
+		createDownstreamHandlers(upstreamSocket, downstreamSocket);
 		upstreamSocket.resume();
 
 		LOGGER.debug("'{}' tunnel between '{}' and '{}' was established", id, upstreamSocket.remoteAddress(),
@@ -126,50 +127,39 @@ public class TunnelTransfer extends Transfer {
 				.end();
 	}
 
-	private void respondConnectionFailed(Throwable throwable) {
-		String errorMessage = getErrorMessage(throwable);
-		upstreamRequest.response()
-				.setStatusCode(HttpResponseStatus.NOT_FOUND.code())
-				.setStatusMessage(errorMessage)
-				.end();
-	}
-
-	private String getErrorMessage(Throwable throwable) {
-		String errorMessage = "Connection to remote server has failed due to ";
-		if(throwable == null) {
-			errorMessage += "unknown error";
-		} else {
-			String throwableMessage = throwable.getMessage();
-			if(throwableMessage == null) {
-				errorMessage += "'" + throwable.getClass() + "' with no message";
-			} else {
-				errorMessage += "nested exception " + throwableMessage;
-			}
-		}
-		return errorMessage;
-	}
-
-	private void createDataHandlers(NetSocket upstreamSocket, NetSocket downstreamSocket) {
+	private void createUpstreamHandlers(NetSocket upstreamSocket, NetSocket downstreamSocket) {
 		upstreamSocket.handler(data -> {
 			LOGGER.debug("'{}' proxying upstream data (length '{}')", id, data.length());
 			downstreamSocket.write(data);
 		});
 
+
+		upstreamSocket.closeHandler(voidEvent -> {
+			LOGGER.debug("'{}' closed (upstream)", id);
+			downstreamSocket.close();
+		});
+
+		upstreamSocket.endHandler(voidEvent -> {
+			LOGGER.trace("'{}' ended (upstream)", id);
+			downstreamSocket.end();
+		});
+	}
+
+	private void createDownstreamHandlers(NetSocket upstreamSocket, NetSocket downstreamSocket) {
 		downstreamSocket.handler(data -> {
 			LOGGER.debug("'{}' proxying downstream data (length '{}')", id, data.length());
 			upstreamSocket.write(data);
 		});
-	}
 
-	private void createEndHandlers(NetSocket upSocket, NetSocket downSocket) {
-		upSocket.endHandler(event1 -> {
-			LOGGER.trace("'{}' closed (up)", id);
-			downSocket.close();
+
+		downstreamSocket.closeHandler(voidEvent -> {
+			LOGGER.debug("'{}' closed (downstream)", id);
+			upstreamSocket.close();
 		});
 
-		downSocket.endHandler(event1 -> {
-			LOGGER.trace("'{}' closed (down)", id);
-			upSocket.close();
+		downstreamSocket.endHandler(voidEvent -> {
+			LOGGER.trace("'{}' ended (downstream)", id);
+			upstreamSocket.end();
 		});
 	}
 }

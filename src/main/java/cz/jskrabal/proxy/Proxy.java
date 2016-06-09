@@ -3,11 +3,11 @@ package cz.jskrabal.proxy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import cz.jskrabal.proxy.config.ConfigurationParameter;
+import cz.jskrabal.proxy.config.enums.ConfigurationParameter;
 import cz.jskrabal.proxy.config.ProxyConfiguration;
 import cz.jskrabal.proxy.transfer.HttpTransfer;
-import cz.jskrabal.proxy.transfer.TunnelTransfer;
 import cz.jskrabal.proxy.transfer.Transfer;
+import cz.jskrabal.proxy.transfer.TunnelTransfer;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpServerOptions;
@@ -33,7 +33,7 @@ public class Proxy extends AbstractVerticle {
 	}
 
 	private void loadConfig() {
-		LOGGER.info("Loaded configuration '{}'", config());
+		LOGGER.info("Loaded configuration '{}'", config().encodePrettily());
 		configuration = new ProxyConfiguration(config());
 	}
 

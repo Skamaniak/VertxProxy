@@ -3,10 +3,9 @@ package cz.jskrabal.proxy.transfer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import cz.jskrabal.proxy.config.ConfigurationParameter;
+import cz.jskrabal.proxy.config.enums.ConfigurationParameter;
 import cz.jskrabal.proxy.config.ProxyConfiguration;
-import cz.jskrabal.proxy.config.pojo.NetworkSettings;
-import cz.jskrabal.proxy.util.ProxyUtils;
+import cz.jskrabal.proxy.dto.NetworkSettings;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import io.vertx.core.http.HttpClient;
@@ -21,14 +20,8 @@ import io.vertx.core.http.HttpServerRequest;
 public class HttpTransfer extends Transfer {
 	private static final Logger LOGGER = LoggerFactory.getLogger(HttpTransfer.class);
 
-	private final Vertx vertx;
-	private final ProxyConfiguration configuration;
-	private final String id = ProxyUtils.generateId();
-
 	public HttpTransfer(Vertx vertx, ProxyConfiguration configuration, HttpServerRequest upstreamRequest) {
-		super(upstreamRequest);
-		this.vertx = vertx;
-		this.configuration = configuration;
+		super(vertx, configuration, upstreamRequest);
 	}
 
 	@Override

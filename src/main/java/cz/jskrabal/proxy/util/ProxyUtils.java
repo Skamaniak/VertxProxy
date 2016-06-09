@@ -18,10 +18,6 @@ public class ProxyUtils {
     private static final String ACCEPT_ENCODING_CHUNKED = "chunked";
     private static final String CONTENT_ENCODING_GZIP = "gzip";
 
-    public static String generateId(){
-        return Long.toHexString(ThreadLocalRandom.current().nextLong());
-    }
-
     public static boolean isChunked(HttpServerRequest request) {
         return isChunked(request.headers());
     }

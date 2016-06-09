@@ -1,4 +1,4 @@
-package cz.jskrabal.proxy.config;
+package cz.jskrabal.proxy.config.enums;
 
 /**
  * Created by janskrabal on 04/06/16.

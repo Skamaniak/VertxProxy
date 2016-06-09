@@ -3,10 +3,9 @@ package cz.jskrabal.proxy.transfer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import cz.jskrabal.proxy.config.ConfigurationParameter;
+import cz.jskrabal.proxy.config.enums.ConfigurationParameter;
 import cz.jskrabal.proxy.config.ProxyConfiguration;
-import cz.jskrabal.proxy.config.pojo.NetworkSettings;
-import cz.jskrabal.proxy.util.ProxyUtils;
+import cz.jskrabal.proxy.dto.NetworkSettings;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
@@ -27,14 +26,8 @@ public class TunnelTransfer extends Transfer {
 	private static final int INDEX_HOST = 0;
 	private static final int INDEX_PORT = 1;
 
-	private final Vertx vertx;
-	private final ProxyConfiguration configuration;
-	private final String id = ProxyUtils.generateId();
-
 	public TunnelTransfer(Vertx vertx, ProxyConfiguration configuration, HttpServerRequest connectRequest) {
-		super(connectRequest);
-		this.vertx = vertx;
-		this.configuration = configuration;
+		super(vertx, configuration, connectRequest);
 	}
 
 	public void start() {
@@ -133,7 +126,6 @@ public class TunnelTransfer extends Transfer {
 			downstreamSocket.write(data);
 		});
 
-
 		upstreamSocket.closeHandler(voidEvent -> {
 			LOGGER.debug("'{}' closed (upstream)", id);
 			downstreamSocket.close();
@@ -150,7 +142,6 @@ public class TunnelTransfer extends Transfer {
 			LOGGER.debug("'{}' proxying downstream data (length '{}')", id, data.length());
 			upstreamSocket.write(data);
 		});
-
 
 		downstreamSocket.closeHandler(voidEvent -> {
 			LOGGER.debug("'{}' closed (downstream)", id);

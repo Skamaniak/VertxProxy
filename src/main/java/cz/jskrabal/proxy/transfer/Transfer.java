@@ -1,23 +1,40 @@
 package cz.jskrabal.proxy.transfer;
 
 import java.nio.channels.UnresolvedAddressException;
+import java.util.Map;
+import java.util.Set;
 
+import cz.jskrabal.proxy.config.ProxyConfiguration;
+import cz.jskrabal.proxy.config.enums.ConfigurationParameter;
+import cz.jskrabal.proxy.config.enums.IdGeneratorType;
 import cz.jskrabal.proxy.util.ProxyUtils;
 import io.netty.handler.codec.http.HttpResponseStatus;
+import io.vertx.core.MultiMap;
+import io.vertx.core.Vertx;
 import io.vertx.core.http.HttpClientRequest;
 import io.vertx.core.http.HttpClientResponse;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.HttpServerResponse;
+import io.vertx.core.net.SocketAddress;
 
 /**
  * Created by janskrabal on 01/06/16.
  */
 public abstract class Transfer {
-    protected final HttpServerRequest upstreamRequest;
+	protected final String id;
+	protected final Vertx vertx;
+	protected final HttpServerRequest upstreamRequest;
+	protected final ProxyConfiguration configuration;
 
-    public Transfer(HttpServerRequest upstreamRequest) {
-        this.upstreamRequest = upstreamRequest;
-    }
+
+	protected Transfer(Vertx vertx, ProxyConfiguration configuration, HttpServerRequest upstreamRequest) {
+		this.vertx = vertx;
+		this.configuration = configuration;
+		this.upstreamRequest = upstreamRequest;
+
+		String idGenerator = configuration.getValue(ConfigurationParameter.ID_GENERATOR, String.class);
+		id = IdGeneratorType.valueOf(idGenerator).generateId();
+	}
 
 	public abstract void start();
 
@@ -26,19 +43,26 @@ public abstract class Transfer {
 		serverResponse
                 .setStatusCode(clientResponse.statusCode())
                 .setStatusMessage(clientResponse.statusMessage())
-				.setChunked(ProxyUtils.isChunked(clientResponse))
-                .headers()
-                    .setAll(clientResponse.headers());
+				.setChunked(ProxyUtils.isChunked(clientResponse));
+
+		MultiMap headers = serverResponse.headers()
+                    .setAll(clientResponse.headers())
+					.addAll(getCustomResponseHeaders());
+
+		getBlockedResponseHeaders().stream().forEach(headers::remove);
 
 		return serverResponse;
 	}
 
 	protected HttpClientRequest configureClientRequestByServerRequest(HttpClientRequest clientRequest,
 			HttpServerRequest serverRequest) {
-		clientRequest
-                .setChunked(ProxyUtils.isChunked(serverRequest))
-                .headers()
-                    .setAll(serverRequest.headers());
+		clientRequest.setChunked(ProxyUtils.isChunked(serverRequest));
+
+		MultiMap headers = clientRequest.headers()
+                    .setAll(serverRequest.headers())
+					.addAll(getCustomRequestHeaders());
+
+		getBlockedRequestHeaders().stream().forEach(headers::remove);
 
 		return clientRequest;
 	}
@@ -56,7 +80,62 @@ public abstract class Transfer {
 		upstreamRequest.response()
 				.setStatusCode(status.code())
 				.setStatusMessage(errorMessage)
-				.end();
+				.headers()
+					.addAll(getCustomResponseHeaders());
+
+		upstreamRequest.response().end();
+	}
+
+	private Map<String, String> getCustomResponseHeaders(){
+		@SuppressWarnings("unchecked")
+		Map<String, String> customHeaders = configuration.getValue(ConfigurationParameter.CUSTOM_RESPONSE_HEADERS,
+				Map.class);
+		addCommonDynamicHeaders(customHeaders);
+
+		return customHeaders;
+	}
+
+	private Map<String, String> getCustomRequestHeaders(){
+		@SuppressWarnings("unchecked")
+		Map<String, String> customHeaders = configuration.getValue(ConfigurationParameter.CUSTOM_REQUEST_HEADERS,
+				Map.class);
+		addCommonDynamicHeaders(customHeaders);
+
+		return customHeaders;
+	}
+
+	private Set<String> getBlockedRequestHeaders(){
+		@SuppressWarnings("unchecked")
+		Set<String> blockedHeaders = (Set<String>) configuration.getValue(
+				ConfigurationParameter.REMOVE_REQUEST_HEADERS, Set.class);
+
+		return blockedHeaders;
+	}
+
+	private Set<String> getBlockedResponseHeaders(){
+		@SuppressWarnings("unchecked")
+		Set<String> blockedHeaders = (Set<String>) configuration.getValue(
+				ConfigurationParameter.REMOVE_RESPONSE_HEADERS, Set.class);
+
+		return blockedHeaders;
+	}
+
+	private void addCommonDynamicHeaders(Map<String, String> headers) {
+		if (configuration.getValue(ConfigurationParameter.ADD_TRANSFER_ID_HEADER, Boolean.class)) {
+			headers.put("X-Transfer-Id", id);
+		}
+
+		if (configuration.getValue(ConfigurationParameter.ADD_FORWARDED_FOR_HEADERS, Boolean.class)) {
+			SocketAddress remoteAddress = upstreamRequest.remoteAddress();
+			headers.put("X-Forwarded-For-Ip", String.valueOf(remoteAddress.host()));
+			headers.put("X-Forwarded-For-Port", String.valueOf(remoteAddress.port()));
+		}
+
+		if (configuration.getValue(ConfigurationParameter.ADD_FORWARDED_FOR_HEADERS, Boolean.class)) {
+			SocketAddress localAddress = upstreamRequest.localAddress();
+			headers.put("X-Forwarded-By-Ip", String.valueOf(localAddress.host()));
+			headers.put("X-Forwarded-By-Port", String.valueOf(localAddress.port()));
+		}
 	}
 
 	//FIXME possible security issue - revealing implementation details to the proxy client.

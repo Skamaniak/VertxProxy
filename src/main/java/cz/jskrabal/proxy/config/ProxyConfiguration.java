@@ -1,14 +1,13 @@
 package cz.jskrabal.proxy.config;
 
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 
+import cz.jskrabal.proxy.config.enums.ConfigurationParameter;
+import io.vertx.core.json.Json;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import io.vertx.core.json.Json;
 import io.vertx.core.json.JsonObject;
 
 /**

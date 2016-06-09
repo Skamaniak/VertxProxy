@@ -61,10 +61,10 @@ There is a full explanation of each configuration option
 |nextTunnelProxy|null|Next tunnel (e. g. SSL) proxy to which the traffic should be proxied.|
 |nextHttpProxy|null|Next HTTP proxy, similar to nextTunnelProxy but for HTTP requests.|
 |idGenerator|RANDOM|Generator which should be used for request ID creation. Possible values are **UUID** (use UUIDs), **RANDOM** (use random strings) of **SEQUENCE** (use sequence starting from 1 and incrementing by 1 for each ID).|
-|customHeaders.appendToRequest|null|Custom headers that should be appended to each request.|
-|customHeaders.appendToResponse|null|Similar to customHeaders.appendToRequest but for responses.|
-|customHeaders.removeFromRequest|null|List of headers that should be stripped off of each request that gets through the proxy.|
-|customHeaders.removeFromResponse|null|Similar to customHeaders.removeFromRequest but for responses.|
+|customHeaders.appendToRequest|empty map|Custom headers that should be appended to each request.|
+|customHeaders.appendToResponse|empty map|Similar to customHeaders.appendToRequest but for responses.|
+|customHeaders.removeFromRequest|empty list|List of headers that should be stripped off of each request that gets through the proxy.|
+|customHeaders.removeFromResponse|empty list|Similar to customHeaders.removeFromRequest but for responses.|
 |addTransferIdHeader|false|Appends header **X-Transfer-Id** to each request and response. Header contains proxy generated identifier of a request or tunnel. The same ID is used in log messages.|
 |addForwardedForHeaders|false|Appends header **X-Forwarded-For-Ip** and **X-Forwarded-For-Port** to each request and response. Headers contain information about the sender.|
 |addForwardedByHeaders|false|Appends header **X-Forwarded-By-Ip** and **X-Forwarded-By-Port** to each request and response. Headers contain information about proxy.|

@@ -3,11 +3,12 @@ package cz.jskrabal.proxy.config;
 import java.util.List;
 import java.util.Optional;
 
-import cz.jskrabal.proxy.config.enums.ConfigurationParameter;
-import io.vertx.core.json.Json;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import cz.jskrabal.proxy.config.enums.ConfigurationParameter;
+import io.vertx.core.json.Json;
+import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 
 /**
@@ -23,11 +24,11 @@ public class ProxyConfiguration {
 	}
 
 	private void checkConfig(JsonObject config) {
-		for(ConfigurationParameter parameter: ConfigurationParameter.values()) {
+		for (ConfigurationParameter parameter : ConfigurationParameter.values()) {
 			Optional<Object> value = getValue(config, parameter.getJsonKeyParts());
-			if(value.isPresent()) {
+			if (value.isPresent()) {
 				Object trueValue = toPojoIfNeeded(parameter.getType(), value.get());
-				if(!parameter.validate(trueValue)) {
+				if (!parameter.validate(trueValue)) {
 					LOGGER.warn("Parameter '{}' contains invalid value '{}'. Parameter will be ignored.",
 							parameter.getFullJsonKey(), trueValue);
 				}
@@ -59,9 +60,8 @@ public class ProxyConfiguration {
 	}
 
 	private static <T> Object toPojoIfNeeded(Class<T> type, Object value) {
-		if (value instanceof JsonObject) {
-			JsonObject json = (JsonObject) value;
-			value = Json.decodeValue(json.toString(), type);
+		if (value instanceof JsonObject || value instanceof JsonArray) {
+			value = Json.decodeValue(value.toString(), type);
 		}
 		return value;
 	}

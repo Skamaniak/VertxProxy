@@ -90,7 +90,7 @@ public abstract class Transfer {
 		@SuppressWarnings("unchecked")
 		Map<String, String> customHeaders = configuration.getValue(ConfigurationParameter.CUSTOM_RESPONSE_HEADERS,
 				Map.class);
-		addCommonDynamicHeaders(customHeaders);
+		addResponseDynamicHeaders(customHeaders);
 
 		return customHeaders;
 	}
@@ -99,7 +99,7 @@ public abstract class Transfer {
 		@SuppressWarnings("unchecked")
 		Map<String, String> customHeaders = configuration.getValue(ConfigurationParameter.CUSTOM_REQUEST_HEADERS,
 				Map.class);
-		addCommonDynamicHeaders(customHeaders);
+		addRequestDynamicHeaders(customHeaders);
 
 		return customHeaders;
 	}
@@ -126,16 +126,24 @@ public abstract class Transfer {
 		}
 
 		if (configuration.getValue(ConfigurationParameter.ADD_FORWARDED_FOR_HEADERS, Boolean.class)) {
-			SocketAddress remoteAddress = upstreamRequest.remoteAddress();
-			headers.put("X-Forwarded-For-Ip", String.valueOf(remoteAddress.host()));
-			headers.put("X-Forwarded-For-Port", String.valueOf(remoteAddress.port()));
-		}
-
-		if (configuration.getValue(ConfigurationParameter.ADD_FORWARDED_FOR_HEADERS, Boolean.class)) {
 			SocketAddress localAddress = upstreamRequest.localAddress();
 			headers.put("X-Forwarded-By-Ip", String.valueOf(localAddress.host()));
 			headers.put("X-Forwarded-By-Port", String.valueOf(localAddress.port()));
 		}
+	}
+
+	private void addRequestDynamicHeaders(Map<String, String> headers) {
+		addCommonDynamicHeaders(headers);
+
+		if (configuration.getValue(ConfigurationParameter.ADD_FORWARDED_FOR_HEADERS, Boolean.class)) {
+			SocketAddress remoteAddress = upstreamRequest.remoteAddress();
+			headers.put("X-Forwarded-For-Ip", String.valueOf(remoteAddress.host()));
+			headers.put("X-Forwarded-For-Port", String.valueOf(remoteAddress.port()));
+		}
+	}
+
+	private void addResponseDynamicHeaders(Map<String, String> headers) {
+		addCommonDynamicHeaders(headers);
 	}
 
 	//FIXME possible security issue - revealing implementation details to the proxy client.

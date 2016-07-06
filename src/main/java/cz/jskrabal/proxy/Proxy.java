@@ -3,7 +3,6 @@ package cz.jskrabal.proxy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import cz.jskrabal.proxy.config.enums.ConfigurationParameter;
 import cz.jskrabal.proxy.config.ProxyConfiguration;
 import cz.jskrabal.proxy.transfer.HttpTransfer;
 import cz.jskrabal.proxy.transfer.Transfer;
@@ -20,7 +19,7 @@ public class Proxy extends AbstractVerticle {
 	public void start() throws Exception {
 		loadConfig();
 
-		vertx.createHttpServer(new HttpServerOptions()).requestHandler(upstreamRequest -> {
+		vertx.createHttpServer(createHttpServerOptions()).requestHandler(upstreamRequest -> {
 			Transfer transfer;
 			if (upstreamRequest.method() == HttpMethod.CONNECT) {
 				transfer = new TunnelTransfer(vertx, configuration, upstreamRequest);
@@ -29,20 +28,17 @@ public class Proxy extends AbstractVerticle {
 			}
 			transfer.start();
 
-		}).listen(getProxyPort(), getProxyHost());
+		}).listen(configuration.getProxyPort(), configuration.getProxyHost());
+	}
+
+	private HttpServerOptions createHttpServerOptions() {
+		return new HttpServerOptions()
+				.setLogActivity(configuration.isNetworkLayerLoggingEnabled());
 	}
 
 	private void loadConfig() {
 		LOGGER.info("Loaded configuration '{}'", config().encodePrettily());
 		configuration = new ProxyConfiguration(config());
-	}
-
-	private Integer getProxyPort() {
-		return configuration.getValue(ConfigurationParameter.NETWORK_PORT, Integer.class);
-	}
-
-	private String getProxyHost() {
-		return configuration.getValue(ConfigurationParameter.NETWORK_HOST, String.class);
 	}
 
 }

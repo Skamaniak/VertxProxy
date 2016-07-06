@@ -34,6 +34,12 @@
             <version>1.10.19</version>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>io.vertx</groupId>
+            <artifactId>vertx-unit</artifactId>
+            <version>${vertx.version}</version>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>
@@ -41,7 +47,7 @@
             <plugins>
                 <plugin>
                     <artifactId>maven-compiler-plugin</artifactId>
-                    <version>3.1</version>
+                    <version>3.3</version>
                     <configuration>
                         <source>1.8</source>
                         <target>1.8</target>
@@ -57,6 +63,6 @@
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.java.ver>1.8</project.java.ver>
-        <vertx.version>3.2.1</vertx.version>
+        <vertx.version>3.3.0</vertx.version>
     </properties>
 </project>

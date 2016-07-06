@@ -11,6 +11,7 @@ import cz.jskrabal.proxy.util.ProxyUtils;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import io.vertx.core.MultiMap;
 import io.vertx.core.Vertx;
+import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.http.HttpClientRequest;
 import io.vertx.core.http.HttpClientResponse;
 import io.vertx.core.http.HttpServerRequest;
@@ -37,6 +38,11 @@ public abstract class Transfer {
 	}
 
 	public abstract void start();
+
+	protected HttpClientOptions createHttpClientOptions(){
+		return new HttpClientOptions()
+				.setLogActivity(configuration.isNetworkLayerLoggingEnabled());
+	}
 
 	protected HttpServerResponse configureServerResponseByClientResponse(HttpServerResponse serverResponse,
 			HttpClientResponse clientResponse) {

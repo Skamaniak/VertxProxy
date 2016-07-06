@@ -3,9 +3,10 @@ package cz.jskrabal.proxy.transfer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import cz.jskrabal.proxy.config.enums.ConfigurationParameter;
 import cz.jskrabal.proxy.config.ProxyConfiguration;
+import cz.jskrabal.proxy.config.enums.ConfigurationParameter;
 import cz.jskrabal.proxy.dto.NetworkSettings;
+import cz.jskrabal.proxy.pump.DataPump;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import io.vertx.core.http.HttpClient;
@@ -26,7 +27,7 @@ public class HttpTransfer extends Transfer {
 
 	@Override
 	public void start() {
-		HttpClient client = vertx.createHttpClient();
+		HttpClient client = vertx.createHttpClient(createHttpClientOptions());
 		HttpMethod method = upstreamRequest.method();
 		String uri = upstreamRequest.uri();
 
@@ -36,22 +37,26 @@ public class HttpTransfer extends Transfer {
 		HttpClientRequest downstreamRequest;
 		if (nextProxy != null) {
 			LOGGER.debug("'{}' proxying request '{}' '{}' to next HTTP proxy {}", id, method, uri, nextProxy);
-			downstreamRequest = client.request(method, nextProxy.getPort(), nextProxy.getHost(), uri,
-					downstreamResponseHandler());
+			downstreamRequest = client.request(method, nextProxy.getPort(), nextProxy.getHost(), uri);
 		} else {
 			LOGGER.debug("'{}' proxying request '{}' '{}'", id, method, uri);
-			downstreamRequest = client.requestAbs(method, uri, downstreamResponseHandler());
+			downstreamRequest = client.requestAbs(method, uri);
 		}
 
-		downstreamRequest.exceptionHandler(throwable -> {
+		downstreamRequest.handler(downstreamResponseHandler());
+		downstreamRequest.exceptionHandler(downstreamExceptionHandler(method, uri));
+
+		configureClientRequestByServerRequest(downstreamRequest, upstreamRequest);
+		createRequestHandler(downstreamRequest);
+	}
+
+	private Handler<Throwable> downstreamExceptionHandler(HttpMethod method, String uri) {
+		return throwable -> {
 			LOGGER.warn("{} request '{}' '{}' has failed. Responding by error to the client's HTTP request",
 					id, method, uri);
 
 			respondConnectionFailed(throwable);
-		});
-
-		configureClientRequestByServerRequest(downstreamRequest, upstreamRequest);
-		createRequestHandler(downstreamRequest);
+		};
 	}
 
 	private Handler<HttpClientResponse> downstreamResponseHandler() {
@@ -65,10 +70,9 @@ public class HttpTransfer extends Transfer {
 	}
 
 	private void createResponseHandlers(HttpClientResponse downstreamResponse) {
-		downstreamResponse.handler(data -> {
-            LOGGER.debug("'{}' proxying response data (length '{}')", id, data.length());
-            upstreamRequest.response().write(data);
-        });
+		new DataPump<>(downstreamResponse, upstreamRequest.response(), data ->
+				LOGGER.debug("'{}' proxying response data (length '{}')", id, data.length())
+		).start();
 
 		downstreamResponse.endHandler(voidEvent -> {
             LOGGER.debug("'{}' ended (downstream)", id);
@@ -77,10 +81,9 @@ public class HttpTransfer extends Transfer {
 	}
 
 	private void createRequestHandler(HttpClientRequest downstreamRequest) {
-		upstreamRequest.handler(data -> {
-			LOGGER.debug("'{}' proxying request data (length '{}')", id, data.length());
-			downstreamRequest.write(data);
-		});
+		new DataPump<>(upstreamRequest, downstreamRequest, data ->
+				LOGGER.debug("'{}' proxying request data (length '{}')", id, data.length())
+		).start();
 
 		upstreamRequest.endHandler(voidEvent -> {
 			LOGGER.debug("'{}' ended (upstream)", id);

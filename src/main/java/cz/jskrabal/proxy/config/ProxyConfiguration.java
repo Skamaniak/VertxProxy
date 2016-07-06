@@ -79,4 +79,16 @@ public class ProxyConfiguration {
 		return value == null ? Optional.empty() : Optional.of(value);
 	}
 
+	public boolean isNetworkLayerLoggingEnabled() {
+		return getValue(ConfigurationParameter.NETWORK_DEBUG_LOGGING, Boolean.class);
+	}
+
+	public int getProxyPort() {
+		return getValue(ConfigurationParameter.NETWORK_PORT, Integer.class);
+	}
+
+	public String getProxyHost() {
+		return getValue(ConfigurationParameter.NETWORK_HOST, String.class);
+	}
+
 }

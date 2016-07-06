@@ -20,6 +20,7 @@ import java.util.List;
     protected static final String INVALID_STRING_VALUE = "invalidValue";
     protected static final int INVALID_NUMBER_VALUE = Integer.MAX_VALUE;
     protected static final String LOCALHOST_IP = "127.0.0.1";
+    protected static final boolean DEBUG_LOGGING = true;
     protected static final int HTTP_RESERVED_PORT = 80;
 
     protected JsonObject config;

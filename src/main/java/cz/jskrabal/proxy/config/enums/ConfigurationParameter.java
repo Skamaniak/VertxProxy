@@ -29,6 +29,7 @@ public enum ConfigurationParameter implements Validable<Object> {
 			return ValidationUtils.validateOptionalEnumOption(value, IdGeneratorType.class);
 		}
 	},
+	NETWORK_DEBUG_LOGGING(Arrays.asList("network", "debugLogging"), Boolean.class, false),
 
 	/* Proxy chaining */
 	NEXT_HTTP_PROXY("nextHttpProxy", NetworkSettings.class, null) {

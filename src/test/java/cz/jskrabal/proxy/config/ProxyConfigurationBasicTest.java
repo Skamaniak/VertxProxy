@@ -69,6 +69,23 @@ public class ProxyConfigurationBasicTest extends AbstractConfigurationTest {
 	}
 
 	@Test
+	public void getNetworkDebugLoggingTest() {
+		addValueToConfig(ConfigurationParameter.NETWORK_DEBUG_LOGGING, DEBUG_LOGGING);
+		assertConfigValue(ConfigurationParameter.NETWORK_DEBUG_LOGGING, DEBUG_LOGGING);
+	}
+
+	@Test
+	public void getNetworkDebugLoggingDefaultValueTest() {
+		assertDefaultValue(ConfigurationParameter.NETWORK_DEBUG_LOGGING);
+	}
+
+	@Test
+	public void getNetworkDebugLoggingInvalidPortNumberTest() {
+		addValueToConfig(ConfigurationParameter.NETWORK_DEBUG_LOGGING, INVALID_NUMBER_VALUE);
+		assertDefaultValue(ConfigurationParameter.NETWORK_DEBUG_LOGGING);
+	}
+
+	@Test
 	public void getIdGeneratorTest() {
 		addValueToConfig(ConfigurationParameter.ID_GENERATOR, IdGeneratorType.SEQUENCE.name());
 		assertConfigValue(ConfigurationParameter.ID_GENERATOR, IdGeneratorType.SEQUENCE.name());

@@ -3,9 +3,10 @@ package cz.jskrabal.proxy.transfer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import cz.jskrabal.proxy.config.enums.ConfigurationParameter;
 import cz.jskrabal.proxy.config.ProxyConfiguration;
+import cz.jskrabal.proxy.config.enums.ConfigurationParameter;
 import cz.jskrabal.proxy.dto.NetworkSettings;
+import cz.jskrabal.proxy.pump.DataPump;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
@@ -74,7 +75,7 @@ public class TunnelTransfer extends Transfer {
 		LOGGER.debug("'{}' resending connect request from '{}' to '{}' to the next proxy in chain '{}'", id,
 				upstreamRequest.remoteAddress(), upstreamRequest.uri(), nextProxySettings);
 
-		HttpClient client = vertx.createHttpClient();
+		HttpClient client = vertx.createHttpClient(createHttpClientOptions());
 		HttpClientRequest downstreamConnectRequest = client.request(HttpMethod.CONNECT, nextProxySettings.getPort(),
 				nextProxySettings.getHost(), upstreamRequest.uri(), responseHandler);
 
@@ -121,10 +122,9 @@ public class TunnelTransfer extends Transfer {
 	}
 
 	private void createUpstreamHandlers(NetSocket upstreamSocket, NetSocket downstreamSocket) {
-		upstreamSocket.handler(data -> {
-			LOGGER.debug("'{}' proxying upstream data (length '{}')", id, data.length());
-			downstreamSocket.write(data);
-		});
+		new DataPump<>(upstreamSocket, downstreamSocket, data ->
+				LOGGER.debug("'{}' proxying upstream data (length '{}')", id, data.length())
+		).start();
 
 		upstreamSocket.closeHandler(voidEvent -> {
 			LOGGER.debug("'{}' closed (upstream)", id);
@@ -138,10 +138,9 @@ public class TunnelTransfer extends Transfer {
 	}
 
 	private void createDownstreamHandlers(NetSocket upstreamSocket, NetSocket downstreamSocket) {
-		downstreamSocket.handler(data -> {
-			LOGGER.debug("'{}' proxying downstream data (length '{}')", id, data.length());
-			upstreamSocket.write(data);
-		});
+		new DataPump<>(downstreamSocket, upstreamSocket, data ->
+				LOGGER.debug("'{}' proxying downstream data (length '{}')", id, data.length())
+		).start();
 
 		downstreamSocket.closeHandler(voidEvent -> {
 			LOGGER.debug("'{}' closed (downstream)", id);

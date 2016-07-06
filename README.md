@@ -21,7 +21,8 @@ I want to develop thin, light-weight proxy that is able to proxy SSL and HTTP tr
 {
   "network": {
     "port": 8080,
-    "host": "0.0.0.0"
+    "host": "0.0.0.0",
+    "debugLogging": true
   },
   "nextTunnelProxy": {
     "port": 7070,
@@ -58,6 +59,7 @@ There is a full explanation of each configuration option
 |---|---|---|
 |network.port|8080|Port which should be proxied.|
 |network.host|0.0.0.0|Host which the proxy should be bound to.|
+|network.debugLogging|false|Enables network layer debug logging. Warning: do not use in production. This may significantly decrease performance.|
 |nextTunnelProxy|null|Next tunnel (e. g. SSL) proxy to which the traffic should be proxied.|
 |nextHttpProxy|null|Next HTTP proxy, similar to nextTunnelProxy but for HTTP requests.|
 |idGenerator|RANDOM|Generator which should be used for request ID creation. Possible values are **UUID** (use UUIDs), **RANDOM** (use random strings) of **SEQUENCE** (use sequence starting from 1 and incrementing by 1 for each ID).|

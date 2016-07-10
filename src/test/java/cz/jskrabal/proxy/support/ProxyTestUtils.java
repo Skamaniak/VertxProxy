@@ -1,8 +1,8 @@
 package cz.jskrabal.proxy.support;
 
-import io.vertx.core.http.HttpMethod;
-
 import java.util.EnumSet;
+
+import io.vertx.core.http.HttpMethod;
 
 /**
  * Created by janskrabal on 06/07/16.

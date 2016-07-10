@@ -4,8 +4,9 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
-import cz.jskrabal.proxy.config.enums.ConfigurationParameter;
 import org.junit.Test;
+
+import cz.jskrabal.proxy.config.enums.ConfigurationParameter;
 
 /**
  * Created by janskrabal on 11/06/16.

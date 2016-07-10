@@ -6,7 +6,6 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
-import io.vertx.core.Handler;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -14,6 +13,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
+import io.vertx.core.Handler;
 import io.vertx.core.streams.ReadStream;
 import io.vertx.core.streams.WriteStream;
 

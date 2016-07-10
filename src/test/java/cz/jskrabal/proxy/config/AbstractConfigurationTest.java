@@ -3,15 +3,15 @@ package cz.jskrabal.proxy.config;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
 
-import cz.jskrabal.proxy.config.ProxyConfiguration;
+import java.util.Collection;
+import java.util.List;
+
+import org.junit.Before;
+
 import cz.jskrabal.proxy.config.enums.ConfigurationParameter;
 import io.vertx.core.json.Json;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
-import org.junit.Before;
-
-import java.util.Collection;
-import java.util.List;
 
 /**
  * Created by janskrabal on 11/06/16.

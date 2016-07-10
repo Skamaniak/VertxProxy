@@ -1,8 +1,8 @@
 package cz.jskrabal.proxy.dto;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-
 import java.util.Objects;
+
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
  * Created by janskrabal on 04/06/16.

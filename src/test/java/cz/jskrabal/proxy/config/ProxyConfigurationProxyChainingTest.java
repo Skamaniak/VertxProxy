@@ -1,8 +1,9 @@
 package cz.jskrabal.proxy.config;
 
+import org.junit.Test;
+
 import cz.jskrabal.proxy.config.enums.ConfigurationParameter;
 import cz.jskrabal.proxy.dto.NetworkSettings;
-import org.junit.Test;
 
 /**
  * Created by janskrabal on 11/06/16.

@@ -1,9 +1,9 @@
 package cz.jskrabal.proxy.pump;
 
+import java.util.function.Consumer;
+
 import io.vertx.core.streams.ReadStream;
 import io.vertx.core.streams.WriteStream;
-
-import java.util.function.Consumer;
 
 /**
  * Created by janskrabal on 01/07/16.

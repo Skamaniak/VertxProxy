@@ -1,9 +1,10 @@
 package cz.jskrabal.proxy.config.enums;
 
+import static org.junit.Assert.assertEquals;
+
 import java.util.List;
 
 import org.junit.Test;
-import static org.junit.Assert.assertEquals;
 
 /**
  * Created by janskrabal on 15/06/16.

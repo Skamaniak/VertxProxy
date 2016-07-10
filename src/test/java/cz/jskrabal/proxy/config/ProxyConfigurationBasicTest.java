@@ -1,9 +1,11 @@
 package cz.jskrabal.proxy.config;
 
+import static org.junit.Assert.assertEquals;
+
+import org.junit.Test;
+
 import cz.jskrabal.proxy.config.enums.ConfigurationParameter;
 import cz.jskrabal.proxy.config.enums.IdGeneratorType;
-import org.junit.Test;
-import static org.junit.Assert.assertEquals;
 
 /**
  * Created by janskrabal on 10/06/16.

@@ -26,8 +26,8 @@ public class DataPump<T> {
 			output.write(data);
 			if(output.writeQueueFull()) {
 				input.pause();
+				output.drainHandler(v -> input.resume());
 			}
-			output.drainHandler(v -> input.resume());
 		});
 	}
 }

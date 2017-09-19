@@ -1,22 +1,22 @@
 # VertxProxy
 Simple HTTP and SSL Vertx Proxy
 
-##Project goals
+## Project goals
 I want to develop thin, light-weight proxy that is able to proxy SSL and HTTP traffic using [Vert.x](http://vertx.io/).
 
-##Basic features
+## Basic features
 - Proxying HTTP requests and responses
 - Creating tunnels on behalf of connect requests from clients
 - Supporting more proxies in a row (proxy chaining)
 
-##Planned features / components 
+## Planned features / components 
 - Tests
 
-##Possible features (nice to have)
+## Possible features (nice to have)
 - Traffic analysis and serialization (image, video, files recognition and serialization to disk)
 - SSL traffic decoding
 
-##Configuration
+## Configuration
 ```
 {
   "network": {
@@ -71,8 +71,8 @@ There is a full explanation of each configuration option
 |addForwardedForHeaders|false|Appends header **X-Forwarded-For-Ip** and **X-Forwarded-For-Port** to each request and response. Headers contain information about the sender.|
 |addForwardedByHeaders|false|Appends header **X-Forwarded-By-Ip** and **X-Forwarded-By-Port** to each request and response. Headers contain information about proxy.|
 
-##Run in IDE
-#####Intellij Idea
+## Run in IDE
+##### Intellij Idea
 - Open Run/Debug Configuration window
 - Add new Application run configuration
 - Set Main class to "io.vertx.core.Launcher"
@@ -81,5 +81,5 @@ There is a full explanation of each configuration option
 - Set JRE to Java 8
 ![Run configuration for IntelliJ Idea](/documentation/readme/RunConfigExampleIdea.png?raw=true"configuration example")
 
-##Author
+## Author
 Jan Škrabal <skrabalja(et)gmail.com>

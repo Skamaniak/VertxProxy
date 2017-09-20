@@ -1,9 +1,5 @@
 package cz.jskrabal.proxy.transfer;
 
-import java.nio.channels.UnresolvedAddressException;
-import java.util.Map;
-import java.util.Set;
-
 import cz.jskrabal.proxy.config.ProxyConfiguration;
 import cz.jskrabal.proxy.config.enums.ConfigurationParameter;
 import cz.jskrabal.proxy.config.enums.IdGeneratorType;
@@ -11,12 +7,16 @@ import cz.jskrabal.proxy.util.ProxyUtils;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import io.vertx.core.MultiMap;
 import io.vertx.core.Vertx;
-import io.vertx.core.http.HttpClientOptions;
+import io.vertx.core.http.HttpClient;
 import io.vertx.core.http.HttpClientRequest;
 import io.vertx.core.http.HttpClientResponse;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.HttpServerResponse;
 import io.vertx.core.net.SocketAddress;
+
+import java.nio.channels.UnresolvedAddressException;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * Created by janskrabal on 01/06/16.
@@ -25,13 +25,15 @@ public abstract class Transfer {
 	protected final String id;
 	protected final Vertx vertx;
 	protected final HttpServerRequest upstreamRequest;
+	protected final HttpClient client;
 	protected final ProxyConfiguration configuration;
 
-
-	protected Transfer(Vertx vertx, ProxyConfiguration configuration, HttpServerRequest upstreamRequest) {
+	protected Transfer(Vertx vertx, HttpClient client, ProxyConfiguration configuration,
+			HttpServerRequest upstreamRequest) {
 		this.vertx = vertx;
 		this.configuration = configuration;
 		this.upstreamRequest = upstreamRequest;
+		this.client = client;
 
 		String idGenerator = configuration.getValue(ConfigurationParameter.ID_GENERATOR, String.class);
 		id = IdGeneratorType.valueOf(idGenerator).generateId();
@@ -39,21 +41,16 @@ public abstract class Transfer {
 
 	public abstract void start();
 
-	protected HttpClientOptions createHttpClientOptions(){
-		return new HttpClientOptions()
-				.setLogActivity(configuration.isNetworkLayerLoggingEnabled());
-	}
-
 	protected HttpServerResponse configureServerResponseByClientResponse(HttpServerResponse serverResponse,
 			HttpClientResponse clientResponse) {
 		serverResponse
-                .setStatusCode(clientResponse.statusCode())
-                .setStatusMessage(clientResponse.statusMessage())
+				.setStatusCode(clientResponse.statusCode())
+				.setStatusMessage(clientResponse.statusMessage())
 				.setChunked(ProxyUtils.isChunked(clientResponse));
 
 		MultiMap headers = serverResponse.headers()
-                    .setAll(clientResponse.headers())
-					.addAll(getCustomResponseHeaders());
+				.setAll(clientResponse.headers())
+				.addAll(getCustomResponseHeaders());
 
 		getBlockedResponseHeaders().stream().forEach(headers::remove);
 
@@ -65,8 +62,8 @@ public abstract class Transfer {
 		clientRequest.setChunked(ProxyUtils.isChunked(serverRequest));
 
 		MultiMap headers = clientRequest.headers()
-                    .setAll(serverRequest.headers())
-					.addAll(getCustomRequestHeaders());
+				.setAll(serverRequest.headers())
+				.addAll(getCustomRequestHeaders());
 
 		getBlockedRequestHeaders().stream().forEach(headers::remove);
 
@@ -77,22 +74,22 @@ public abstract class Transfer {
 		String errorMessage = getErrorMessage(throwable);
 
 		HttpResponseStatus status;
-		if(throwable instanceof UnresolvedAddressException) {
+		if (throwable instanceof UnresolvedAddressException) {
 			status = HttpResponseStatus.NOT_FOUND;
 		} else {
-			status =  HttpResponseStatus.BAD_GATEWAY;
+			status = HttpResponseStatus.BAD_GATEWAY;
 		}
 
 		upstreamRequest.response()
 				.setStatusCode(status.code())
 				.setStatusMessage(errorMessage)
 				.headers()
-					.addAll(getCustomResponseHeaders());
+				.addAll(getCustomResponseHeaders());
 
 		upstreamRequest.response().end();
 	}
 
-	private Map<String, String> getCustomResponseHeaders(){
+	private Map<String, String> getCustomResponseHeaders() {
 		@SuppressWarnings("unchecked")
 		Map<String, String> customHeaders = configuration.getValue(ConfigurationParameter.CUSTOM_RESPONSE_HEADERS,
 				Map.class);
@@ -101,7 +98,7 @@ public abstract class Transfer {
 		return customHeaders;
 	}
 
-	private Map<String, String> getCustomRequestHeaders(){
+	private Map<String, String> getCustomRequestHeaders() {
 		@SuppressWarnings("unchecked")
 		Map<String, String> customHeaders = configuration.getValue(ConfigurationParameter.CUSTOM_REQUEST_HEADERS,
 				Map.class);
@@ -110,7 +107,7 @@ public abstract class Transfer {
 		return customHeaders;
 	}
 
-	private Set<String> getBlockedRequestHeaders(){
+	private Set<String> getBlockedRequestHeaders() {
 		@SuppressWarnings("unchecked")
 		Set<String> blockedHeaders = (Set<String>) configuration.getValue(
 				ConfigurationParameter.REMOVE_REQUEST_HEADERS, Set.class);
@@ -118,7 +115,7 @@ public abstract class Transfer {
 		return blockedHeaders;
 	}
 
-	private Set<String> getBlockedResponseHeaders(){
+	private Set<String> getBlockedResponseHeaders() {
 		@SuppressWarnings("unchecked")
 		Set<String> blockedHeaders = (Set<String>) configuration.getValue(
 				ConfigurationParameter.REMOVE_RESPONSE_HEADERS, Set.class);
@@ -155,11 +152,11 @@ public abstract class Transfer {
 	//FIXME possible security issue - revealing implementation details to the proxy client.
 	private String getErrorMessage(Throwable throwable) {
 		String errorMessage = "Connection to remote server has failed due to ";
-		if(throwable == null) {
+		if (throwable == null) {
 			errorMessage += "unknown error";
 		} else {
 			String throwableMessage = throwable.getMessage();
-			if(throwableMessage == null) {
+			if (throwableMessage == null) {
 				errorMessage += "'" + throwable.getClass() + "' with no message";
 			} else {
 				errorMessage += "nested exception " + throwableMessage;

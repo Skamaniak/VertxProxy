@@ -69,6 +69,6 @@
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.java.ver>1.8</project.java.ver>
-        <vertx.version>3.3.0</vertx.version>
+        <vertx.version>3.4.2</vertx.version>
     </properties>
 </project>

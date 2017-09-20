@@ -82,4 +82,4 @@ There is a full explanation of each configuration option
 ![Run configuration for IntelliJ Idea](/documentation/readme/RunConfigExampleIdea.png?raw=true"configuration example")
 
 ## Author
-Jan Škrabal <skrabalja(et)gmail.com>
+Jan Škrabal <skrabalja(at)gmail.com>

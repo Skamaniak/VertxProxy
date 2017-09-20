@@ -1,8 +1,5 @@
 package cz.jskrabal.proxy.transfer;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import cz.jskrabal.proxy.config.ProxyConfiguration;
 import cz.jskrabal.proxy.config.enums.ConfigurationParameter;
 import cz.jskrabal.proxy.dto.NetworkSettings;
@@ -14,6 +11,8 @@ import io.vertx.core.http.HttpClientRequest;
 import io.vertx.core.http.HttpClientResponse;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpServerRequest;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Created by janskrabal on 01/06/16.
@@ -21,13 +20,13 @@ import io.vertx.core.http.HttpServerRequest;
 public class HttpTransfer extends Transfer {
 	private static final Logger LOGGER = LoggerFactory.getLogger(HttpTransfer.class);
 
-	public HttpTransfer(Vertx vertx, ProxyConfiguration configuration, HttpServerRequest upstreamRequest) {
-		super(vertx, configuration, upstreamRequest);
+	public HttpTransfer(Vertx vertx, HttpClient client, ProxyConfiguration configuration,
+			HttpServerRequest upstreamRequest) {
+		super(vertx, client, configuration, upstreamRequest);
 	}
 
 	@Override
 	public void start() {
-		HttpClient client = vertx.createHttpClient(createHttpClientOptions());
 		HttpMethod method = upstreamRequest.method();
 		String uri = upstreamRequest.uri();
 
@@ -75,9 +74,9 @@ public class HttpTransfer extends Transfer {
 		).start();
 
 		downstreamResponse.endHandler(voidEvent -> {
-            LOGGER.debug("'{}' ended (downstream)", id);
-            upstreamRequest.response().end();
-        });
+			LOGGER.debug("'{}' ended (downstream)", id);
+			upstreamRequest.response().end();
+		});
 	}
 
 	private void createRequestHandler(HttpClientRequest downstreamRequest) {

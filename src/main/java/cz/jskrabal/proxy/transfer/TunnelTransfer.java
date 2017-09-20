@@ -1,8 +1,5 @@
 package cz.jskrabal.proxy.transfer;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import cz.jskrabal.proxy.config.ProxyConfiguration;
 import cz.jskrabal.proxy.config.enums.ConfigurationParameter;
 import cz.jskrabal.proxy.dto.NetworkSettings;
@@ -16,6 +13,8 @@ import io.vertx.core.http.HttpClientResponse;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.net.NetSocket;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Created by janskrabal on 31/05/16.
@@ -27,8 +26,9 @@ public class TunnelTransfer extends Transfer {
 	private static final int INDEX_HOST = 0;
 	private static final int INDEX_PORT = 1;
 
-	public TunnelTransfer(Vertx vertx, ProxyConfiguration configuration, HttpServerRequest connectRequest) {
-		super(vertx, configuration, connectRequest);
+	public TunnelTransfer(Vertx vertx, HttpClient client, ProxyConfiguration configuration,
+			HttpServerRequest connectRequest) {
+		super(vertx, client, configuration, connectRequest);
 	}
 
 	public void start() {
@@ -45,24 +45,24 @@ public class TunnelTransfer extends Transfer {
 
 	private void createTunnelThroughAnotherProxy(NetworkSettings nextTunnelProxy) {
 		resendConnect(nextTunnelProxy, downstreamResponse -> {
-            int responseStatusCode = downstreamResponse.statusCode();
+			int responseStatusCode = downstreamResponse.statusCode();
 
-            if (responseStatusCode == HttpResponseStatus.OK.code()) {
-                LOGGER.debug("'{}' remote proxy '{}' has established the connection to '{}'", id, nextTunnelProxy,
-                        upstreamRequest.uri());
-                tunnelTo(downstreamResponse.netSocket());
-            } else {
-                LOGGER.debug("{} connection to the remote proxy {} has failed ({} {})", id, nextTunnelProxy,
-                        downstreamResponse.statusCode(), downstreamResponse.statusMessage());
+			if (responseStatusCode == HttpResponseStatus.OK.code()) {
+				LOGGER.debug("'{}' remote proxy '{}' has established the connection to '{}'", id, nextTunnelProxy,
+						upstreamRequest.uri());
+				tunnelTo(downstreamResponse.netSocket());
+			} else {
+				LOGGER.debug("{} connection to the remote proxy {} has failed ({} {})", id, nextTunnelProxy,
+						downstreamResponse.statusCode(), downstreamResponse.statusMessage());
 
-                configureServerResponseByClientResponse(upstreamRequest.response(), downstreamResponse).end();
-            }
-        }, throwable -> {
-            LOGGER.warn("{} connection to the remote proxy {} has failed. Responding by error to the client's " +
+				configureServerResponseByClientResponse(upstreamRequest.response(), downstreamResponse).end();
+			}
+		}, throwable -> {
+			LOGGER.warn("{} connection to the remote proxy {} has failed. Responding by error to the client's " +
 					"connect request", id, nextTunnelProxy, throwable);
 
-            respondConnectionFailed(throwable);
-        });
+			respondConnectionFailed(throwable);
+		});
 	}
 
 	private NetworkSettings getNextTunnelProxySettings() {
@@ -75,7 +75,6 @@ public class TunnelTransfer extends Transfer {
 		LOGGER.debug("'{}' resending connect request from '{}' to '{}' to the next proxy in chain '{}'", id,
 				upstreamRequest.remoteAddress(), upstreamRequest.uri(), nextProxySettings);
 
-		HttpClient client = vertx.createHttpClient(createHttpClientOptions());
 		HttpClientRequest downstreamConnectRequest = client.request(HttpMethod.CONNECT, nextProxySettings.getPort(),
 				nextProxySettings.getHost(), upstreamRequest.uri(), responseHandler);
 

@@ -56,7 +56,7 @@ public class ProxyConfiguration {
 			return castedVal;
 		}
 		throw new ClassCastException("Required type " + type + " is not compatible with the type " + param.getType()
-				+ " of parameter" + param);
+				+ " of parameter " + param);
 	}
 
 	private static <T> Object toPojoIfNeeded(Class<T> type, Object value) {

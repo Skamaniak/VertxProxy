@@ -19,7 +19,7 @@ public class IdGeneratorTest {
 	@Test
 	public void uuidGeneratorTest() {
 		int collisions = testGeneratorInCycle(IdGeneratorType.UUID);
-        assertEquals(0, collisions);
+		assertEquals(0, collisions);
 	}
 
 	@Test
@@ -30,10 +30,10 @@ public class IdGeneratorTest {
 
 	@Test
 	public void sequenceGeneratorTest() {
-        int collisions = testGeneratorInCycle(IdGeneratorType.SEQUENCE);
-        assertEquals(0, collisions);
+		int collisions = testGeneratorInCycle(IdGeneratorType.SEQUENCE);
+		assertEquals(0, collisions);
 
-    }
+	}
 
 	@Test
 	public void sequenceGeneratorFormatTest() {
@@ -54,11 +54,11 @@ public class IdGeneratorTest {
 		}
 	}
 
-    @Test
-    public void randomGeneratorTest(){
-        int collisions = testGeneratorInCycle(IdGeneratorType.RANDOM);
-        assertTrue(collisions <= GENERATION_COUNT / 1000);
-    }
+	@Test
+	public void randomGeneratorTest() {
+		int collisions = testGeneratorInCycle(IdGeneratorType.RANDOM);
+		assertTrue(collisions <= GENERATION_COUNT / 1000);
+	}
 
 	private <T> int testGeneratorInCycle(IdGenerator<T> generator) {
 		T id;
@@ -67,6 +67,6 @@ public class IdGeneratorTest {
 			id = generator.generateId();
 			uuids.add(id);
 		}
-        return GENERATION_COUNT - uuids.size();
+		return GENERATION_COUNT - uuids.size();
 	}
 }

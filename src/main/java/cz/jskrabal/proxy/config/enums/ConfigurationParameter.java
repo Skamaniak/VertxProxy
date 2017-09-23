@@ -23,13 +23,24 @@ public enum ConfigurationParameter implements Validable<Object> {
 		}
 	},
 	NETWORK_HOST(Arrays.asList("network", "host"), String.class, "0.0.0.0"),
+
 	ID_GENERATOR("idGenerator", String.class, IdGeneratorType.RANDOM.name()) {
 		@Override
 		public boolean validate(Object value) {
 			return ValidationUtils.validateOptionalEnumOption(value, IdGeneratorType.class);
 		}
 	},
-	NETWORK_DEBUG_LOGGING(Arrays.asList("network", "debugLogging"), Boolean.class, false),
+
+	/* Upstream and downstream options */
+	STREAM_UPSTREAM_IDLE_TIMEOUT_MILLIS(Arrays.asList("stream", "upstream", "idleTimeoutMillis"), Integer.class, 0),
+	STREAM_UPSTREAM_DEBUG_LOGGING(Arrays.asList("stream", "upstream", "debugLogging"), Boolean.class, false),
+
+	STREAM_DOWNSTREAM_IDLE_TIMEOUT_MILLIS(Arrays.asList("stream", "downstream", "idleTimeoutMillis"), Integer.class, 0),
+	STREAM_DOWNSTREAM_CONNECTION_TIMEOUT_MILLIS(Arrays.asList("stream", "downstream", "connectionTimeoutMillis"),
+			Integer.class, 60000),
+	STREAM_DOWNSTREAM_REQUEST_TIMEOUT_MILLIS(Arrays.asList("stream", "downstream", "httpRequestTimeoutMillis"),
+			Integer.class, 0),
+	STREAM_DOWNSTREAM_DEBUG_LOGGING(Arrays.asList("stream", "downstream", "debugLogging"), Boolean.class, false),
 
 	/* Proxy chaining */
 	NEXT_HTTP_PROXY("nextHttpProxy", NetworkSettings.class, null) {
@@ -64,7 +75,7 @@ public enum ConfigurationParameter implements Validable<Object> {
 			return ValidationUtils.validateOptionalSetOfTypes(value, String.class);
 		}
 	},
-	REMOVE_RESPONSE_HEADERS(Arrays.asList("customHeaders", "removeFromRespobse"), Set.class, Collections.emptySet()) {
+	REMOVE_RESPONSE_HEADERS(Arrays.asList("customHeaders", "removeFromResponse"), Set.class, Collections.emptySet()) {
 		@Override
 		public boolean validate(Object value) {
 			return ValidationUtils.validateOptionalSetOfTypes(value, String.class);

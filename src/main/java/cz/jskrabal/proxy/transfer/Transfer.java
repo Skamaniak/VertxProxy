@@ -17,6 +17,7 @@ import io.vertx.core.net.SocketAddress;
 import java.nio.channels.UnresolvedAddressException;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.TimeoutException;
 
 /**
  * Created by janskrabal on 01/06/16.
@@ -52,7 +53,7 @@ public abstract class Transfer {
 				.setAll(clientResponse.headers())
 				.addAll(getCustomResponseHeaders());
 
-		getBlockedResponseHeaders().stream().forEach(headers::remove);
+		getBlockedResponseHeaders().forEach(headers::remove);
 
 		return serverResponse;
 	}
@@ -65,28 +66,44 @@ public abstract class Transfer {
 				.setAll(serverRequest.headers())
 				.addAll(getCustomRequestHeaders());
 
-		getBlockedRequestHeaders().stream().forEach(headers::remove);
+		getBlockedRequestHeaders().forEach(headers::remove);
 
 		return clientRequest;
 	}
 
-	protected void respondConnectionFailed(Throwable throwable) {
-		String errorMessage = getErrorMessage(throwable);
+	protected HttpClientRequest addRequestTimeout(HttpClientRequest request) {
+		long requestTimeout = configuration.getDownstreamRequestTimeout();
+		if (requestTimeout > 0) {
+			request.setTimeout(requestTimeout);
+		}
+		return request;
+	}
 
+	protected void respondConnectionFailed(Throwable throwable) {
+		if (!upstreamRequest.response().headWritten()) {
+			String errorMessage = getErrorMessage(throwable);
+
+			HttpResponseStatus status = exceptionToHttpStatus(throwable);
+			upstreamRequest.response()
+					.setStatusCode(status.code())
+					.setStatusMessage(errorMessage)
+					.headers()
+					.addAll(getCustomResponseHeaders());
+
+			upstreamRequest.response().end();
+		}
+	}
+
+	private static HttpResponseStatus exceptionToHttpStatus(Throwable throwable) {
 		HttpResponseStatus status;
 		if (throwable instanceof UnresolvedAddressException) {
 			status = HttpResponseStatus.NOT_FOUND;
+		} else if (throwable instanceof TimeoutException) {
+			status = HttpResponseStatus.GATEWAY_TIMEOUT;
 		} else {
 			status = HttpResponseStatus.BAD_GATEWAY;
 		}
-
-		upstreamRequest.response()
-				.setStatusCode(status.code())
-				.setStatusMessage(errorMessage)
-				.headers()
-				.addAll(getCustomResponseHeaders());
-
-		upstreamRequest.response().end();
+		return status;
 	}
 
 	private Map<String, String> getCustomResponseHeaders() {

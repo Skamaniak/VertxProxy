@@ -18,12 +18,12 @@ public class ConfigurationParameterTest {
 
 		for (ConfigurationParameter parameter : ConfigurationParameter.values()) {
 			keyParts = parameter.getJsonKeyParts();
-            fullKeyParts = parameter.getFullJsonKey().split("\\.");
+			fullKeyParts = parameter.getFullJsonKey().split("\\.");
 
-            assertEquals(keyParts.size(), fullKeyParts.length);
+			assertEquals(keyParts.size(), fullKeyParts.length);
 
 			for (int i = 0; i < keyParts.size(); i++) {
-                assertEquals(keyParts.get(i), fullKeyParts[i]);
+				assertEquals(keyParts.get(i), fullKeyParts[i]);
 			}
 		}
 	}

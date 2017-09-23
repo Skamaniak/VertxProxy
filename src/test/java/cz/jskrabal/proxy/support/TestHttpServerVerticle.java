@@ -1,6 +1,7 @@
 package cz.jskrabal.proxy.support;
 
 import io.vertx.core.AbstractVerticle;
+import io.vertx.core.Future;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.streams.Pump;
 
@@ -10,24 +11,30 @@ import io.vertx.core.streams.Pump;
 public class TestHttpServerVerticle extends AbstractVerticle {
 
 	@Override
-	public void start() throws Exception {
-		vertx.createHttpServer().requestHandler(upstreamRequest -> {
+	public void start(Future<Void> startFuture) throws Exception {
+		vertx.executeBlocking(event -> vertx.createHttpServer().requestHandler(upstreamRequest -> {
 			ResponseType responseType = getExpectedResponseType(upstreamRequest);
 
 			switch (responseType) {
-				case RESPOND:
-					processRequest(upstreamRequest);
-					break;
-				case DO_NOT_RESPOND:
-					break;
-				case SNAP_CONNECTION:
-					upstreamRequest.response().close();
+			case RESPOND:
+				processRequest(upstreamRequest);
+				break;
+			case DO_NOT_RESPOND:
+				break;
+			case SNAP_CONNECTION:
+				upstreamRequest.response().close();
 			}
-		}).listen(ProxyTestUtils.HTTP_SERVER_PORT);
+		}).listen(ProxyTestUtils.HTTP_SERVER_PORT, result -> {
+			if (result.succeeded()) {
+				event.complete();
+			} else {
+				event.fail(result.cause());
+			}
+		}), startFuture.completer());
 	}
 
 	private void processRequest(HttpServerRequest upstreamRequest) {
-		if(ProxyTestUtils.canHaveBody(upstreamRequest.method())) {
+		if (ProxyTestUtils.canHaveBody(upstreamRequest.method())) {
 			respondWithBody(upstreamRequest);
 		} else {
 			respond(upstreamRequest);
@@ -49,8 +56,7 @@ public class TestHttpServerVerticle extends AbstractVerticle {
 
 		Pump.pump(upstreamRequest, upstreamRequest.response()).start();
 		upstreamRequest.endHandler(
-				voidEvent -> upstreamRequest.response().end()
-		);
+				voidEvent -> upstreamRequest.response().end());
 	}
 
 	private void respond(HttpServerRequest request) {

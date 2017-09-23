@@ -21,8 +21,19 @@ I want to develop thin, light-weight proxy that is able to proxy SSL and HTTP tr
 {
   "network": {
     "port": 8080,
-    "host": "0.0.0.0",
-    "debugLogging": true
+    "host": "0.0.0.0"
+  },
+  "stream": {
+    "upstream": {
+      "debugLogging": true,
+      "idleTimeoutMillis": 0
+    },
+    "downstream": {
+      "debugLogging": true,
+      "idleTimeoutMillis": 0,
+      "connectionTimeoutMillis": 60000,
+      "httpRequestTimeoutMillis": 0
+    }
   },
   "nextTunnelProxy": {
     "port": 7070,
@@ -59,7 +70,12 @@ There is a full explanation of each configuration option
 |---|---|---|
 |network.port|8080|Port which should be proxied.|
 |network.host|0.0.0.0|Host which the proxy should be bound to.|
-|network.debugLogging|false|Enables network layer debug logging. Warning: do not use in production. This may significantly decrease performance.|
+|stream.upstream.debugLogging|false|Enables network layer debug logging for upstream (client -> proxy). Warning: do not use in production. This may significantly decrease performance.|
+|stream.upstream.idleTimeoutMillis|0|Determines if an upstream connection will timeout and be closed if no data is received within the timeout. Zero means no timeout.|
+|stream.downstream.debugLogging|false|Enables network layer debug logging for downstream (proxy -> server). Warning: do not use in production. This may significantly decrease performance.|
+|stream.downstream.idleTimeoutMillis|0|Determines if a downstream connection will timeout and be closed if no data is received within the timeout. Zero means no timeout.|
+|stream.downstream.connectionTimeoutMillis|60000|Timeout for establishing the downstream connection.|
+|stream.downstream.requestTimeoutMillis|0|Timeout for waiting on the initial data from downstream request. Zero means no timeout.|
 |nextTunnelProxy|null|Next tunnel (e. g. SSL) proxy to which the traffic should be proxied.|
 |nextHttpProxy|null|Next HTTP proxy, similar to nextTunnelProxy but for HTTP requests.|
 |idGenerator|RANDOM|Generator which should be used for request ID creation. Possible values are **UUID** (use UUIDs), **RANDOM** (use random strings) of **SEQUENCE** (use sequence starting from 1 and incrementing by 1 for each ID).|
@@ -83,3 +99,6 @@ There is a full explanation of each configuration option
 
 ## Author
 Jan Škrabal <skrabalja(at)gmail.com>
+
+## Contributors
+Jan Škrabal, Jakub Coufal

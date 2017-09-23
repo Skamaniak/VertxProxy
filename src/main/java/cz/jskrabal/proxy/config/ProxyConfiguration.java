@@ -79,8 +79,28 @@ public class ProxyConfiguration {
 		return value == null ? Optional.empty() : Optional.of(value);
 	}
 
-	public boolean isNetworkLayerLoggingEnabled() {
-		return getValue(ConfigurationParameter.NETWORK_DEBUG_LOGGING, Boolean.class);
+	public boolean isDownstreamDebugLoggingEnabled() {
+		return getValue(ConfigurationParameter.STREAM_DOWNSTREAM_DEBUG_LOGGING, Boolean.class);
+	}
+
+	public boolean isUpstreamDebugLoggingEnabled() {
+		return getValue(ConfigurationParameter.STREAM_UPSTREAM_DEBUG_LOGGING, Boolean.class);
+	}
+
+	public int getUpstreamIdleTimeout() {
+		return getValue(ConfigurationParameter.STREAM_UPSTREAM_IDLE_TIMEOUT_MILLIS, Integer.class);
+	}
+
+	public int getDownstreamIdleTimeout() {
+		return getValue(ConfigurationParameter.STREAM_DOWNSTREAM_IDLE_TIMEOUT_MILLIS, Integer.class);
+	}
+
+	public int getDownstreamConnectionTimeout() {
+		return getValue(ConfigurationParameter.STREAM_DOWNSTREAM_CONNECTION_TIMEOUT_MILLIS, Integer.class);
+	}
+
+	public int getDownstreamRequestTimeout() {
+		return getValue(ConfigurationParameter.STREAM_DOWNSTREAM_REQUEST_TIMEOUT_MILLIS, Integer.class);
 	}
 
 	public int getProxyPort() {

@@ -44,6 +44,7 @@ public class HttpTransfer extends Transfer {
 
 		downstreamRequest.handler(downstreamResponseHandler());
 		downstreamRequest.exceptionHandler(downstreamExceptionHandler(method, uri));
+		addRequestTimeout(downstreamRequest);
 
 		configureClientRequestByServerRequest(downstreamRequest, upstreamRequest);
 		createRequestHandler(downstreamRequest);

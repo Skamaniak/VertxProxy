@@ -21,6 +21,7 @@ import io.vertx.core.Vertx;
 import io.vertx.core.http.HttpClient;
 import io.vertx.core.http.HttpClientResponse;
 import io.vertx.core.json.JsonObject;
+import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
 import io.vertx.ext.unit.junit.VertxUnitRunner;
 
@@ -39,11 +40,20 @@ public abstract class AbstractProxyTest {
 	@Before
 	public void setUp(TestContext context) throws IOException {
 		vertx = Vertx.vertx();
+		Async async = context.async(2);
 
 		JsonObject configuration = readTestConfig(configPath);
 		DeploymentOptions options = new DeploymentOptions().setConfig(configuration);
-		vertx.deployVerticle(Proxy.class.getName(), options, context.asyncAssertSuccess());
-		vertx.deployVerticle(TestHttpServerVerticle.class.getName());
+		vertx.deployVerticle(Proxy.class.getName(), options, result -> {
+			context.<String>asyncAssertSuccess().handle(result);
+			async.countDown();
+		});
+		vertx.deployVerticle(TestHttpServerVerticle.class.getName(), result -> {
+			context.<String>asyncAssertSuccess().handle(result);
+			async.countDown();
+		});
+
+		async.awaitSuccess();
 	}
 
 	@After

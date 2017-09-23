@@ -77,6 +77,7 @@ public class TunnelTransfer extends Transfer {
 
 		HttpClientRequest downstreamConnectRequest = client.request(HttpMethod.CONNECT, nextProxySettings.getPort(),
 				nextProxySettings.getHost(), upstreamRequest.uri(), responseHandler);
+		addRequestTimeout(downstreamConnectRequest);
 
 		configureClientRequestByServerRequest(downstreamConnectRequest, upstreamRequest)
 				.exceptionHandler(exceptionHandler)

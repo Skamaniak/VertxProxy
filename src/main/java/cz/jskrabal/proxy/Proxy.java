@@ -1,5 +1,8 @@
 package cz.jskrabal.proxy;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import cz.jskrabal.proxy.acceptor.Acceptor;
 import cz.jskrabal.proxy.config.ProxyConfiguration;
 import cz.jskrabal.proxy.transfer.HttpTransfer;
@@ -13,8 +16,8 @@ import io.vertx.core.http.HttpConnection;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.http.HttpServerRequest;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+
+import java.util.concurrent.TimeUnit;
 
 public class Proxy extends AbstractVerticle {
 	private static final Logger LOGGER = LoggerFactory.getLogger(Proxy.class);
@@ -29,18 +32,27 @@ public class Proxy extends AbstractVerticle {
 			vertx.createHttpServer(createHttpServerOptions())
 					.requestHandler(this::transfer)
 					.connectionHandler(this::connect)
-					.listen(configuration.getProxyPort(), configuration.getProxyHost());
+					.listen(configuration.getProxyPort(), configuration.getProxyHost(), result -> {
+						if (result.succeeded()) {
+							event.complete();
+						} else {
+							event.fail(result.cause());
+						}
+					});
 		}, startFuture.completer());
 	}
 
 	private HttpServerOptions createHttpServerOptions() {
 		return new HttpServerOptions()
-				.setLogActivity(configuration.isNetworkLayerLoggingEnabled());
+				.setLogActivity(configuration.isUpstreamDebugLoggingEnabled())
+				.setIdleTimeout(configuration.getUpstreamIdleTimeout());
 	}
 
 	private HttpClientOptions createHttpClientOptions() {
 		return new HttpClientOptions()
-				.setLogActivity(configuration.isNetworkLayerLoggingEnabled());
+				.setLogActivity(configuration.isDownstreamDebugLoggingEnabled())
+				.setConnectTimeout(configuration.getDownstreamConnectionTimeout())
+				.setIdleTimeout((int) TimeUnit.MILLISECONDS.toSeconds(configuration.getDownstreamIdleTimeout()));
 	}
 
 	private ProxyConfiguration loadConfig() {

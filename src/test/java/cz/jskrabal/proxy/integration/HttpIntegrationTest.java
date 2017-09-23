@@ -2,11 +2,12 @@ package cz.jskrabal.proxy.integration;
 
 import java.util.EnumSet;
 
-import org.junit.Ignore;
 import org.junit.Test;
 
 import cz.jskrabal.proxy.support.ResponseType;
 import cz.jskrabal.proxy.support.TestServerRequest;
+import io.netty.handler.codec.http.HttpResponseStatus;
+import io.vertx.core.http.HttpClientResponse;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
@@ -35,28 +36,41 @@ public class HttpIntegrationTest extends AbstractProxyTest {
 	}
 
 	@Test
-	@Ignore
-	//TODO add configurable timeouts for http requests
 	public void testProxyHttpRequestWhenServerNotResponding(TestContext context) {
 		final Async async = context.async();
+
 		TestServerRequest request = TestServerRequest.create(context, HttpMethod.GET)
 				.withResponseType(ResponseType.DO_NOT_RESPOND)
 				.build();
 
-		executeRequest(request, response -> async.complete());
+		executeRequest(request,
+				response -> {
+					assertErrorStatus(context, response, HttpResponseStatus.GATEWAY_TIMEOUT);
+					response.endHandler(e -> async.complete());
+				},
+				context::fail);
+
 	}
 
 	@Test
-	public void testProxyHttpRequestWhenServerSnapsConnection(TestContext context) {
+	public void testProxyHttpRequestWhenServerSnapsConnection(TestContext context) throws InterruptedException {
 		final Async async = context.async();
 		TestServerRequest request = TestServerRequest.create(context, HttpMethod.GET)
 				.withResponseType(ResponseType.SNAP_CONNECTION)
 				.build();
 
-		executeRequest(request, response -> {
-			response.handler(data -> context.fail("Server responded " + data));
-			response.endHandler(event ->  async.complete());
-		});
+		executeRequest(request,
+				response -> {
+					assertErrorStatus(context, response, HttpResponseStatus.BAD_GATEWAY);
+					response.endHandler(e -> async.complete());
+				},
+				context::fail);
+	}
+
+	private void assertErrorStatus(TestContext context, HttpClientResponse response,
+			HttpResponseStatus status) {
+
+		context.assertTrue(response.statusCode() == status.code());
 	}
 
 	private void sendRequestWithExpectedResponseCode(TestContext context, HttpMethod method, int responseCode) {

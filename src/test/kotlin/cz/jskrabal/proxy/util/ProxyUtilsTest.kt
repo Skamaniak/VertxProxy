@@ -1,21 +1,21 @@
 package cz.jskrabal.proxy.util
 
+import com.nhaarman.mockito_kotlin.whenever
+import cz.jskrabal.proxy.ProxyUtils
+import cz.jskrabal.proxy.getContentType
+import cz.jskrabal.proxy.isChunked
+import cz.jskrabal.proxy.isGzipped
+import io.vertx.core.MultiMap
+import io.vertx.core.http.HttpClientResponse
+import io.vertx.core.http.HttpServerRequest
 import junit.framework.TestCase.assertTrue
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
-import org.mockito.Mockito.`when`
-
-import java.util.Optional
-
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.Mock
 import org.mockito.runners.MockitoJUnitRunner
-
-import io.vertx.core.MultiMap
-import io.vertx.core.http.HttpClientResponse
-import io.vertx.core.http.HttpServerRequest
 
 /**
  * Created by janskrabal on 15/06/16.
@@ -24,48 +24,48 @@ import io.vertx.core.http.HttpServerRequest
 class ProxyUtilsTest {
 
     @Mock
-    private val clientResponse: HttpClientResponse? = null
+    private lateinit var clientResponse: HttpClientResponse
 
     @Mock
-    private val serverRequest: HttpServerRequest? = null
+    private lateinit var serverRequest: HttpServerRequest
 
     @Mock
-    private val headers: MultiMap? = null
+    private lateinit var headers: MultiMap
 
     @Before
     fun setup() {
-        `when`(clientResponse!!.headers()).thenReturn(headers)
-        `when`(serverRequest!!.headers()).thenReturn(headers)
+        whenever(clientResponse.headers()).thenReturn(headers)
+        whenever(serverRequest.headers()).thenReturn(headers)
     }
 
     @Test
     fun isChunkedTest() {
-        `when`(headers!!.get(HEADER_TRANSFER_ENCODING)).thenReturn(ACCEPT_ENCODING_CHUNKED)
+        whenever(headers.get(HEADER_TRANSFER_ENCODING)).thenReturn(ACCEPT_ENCODING_CHUNKED)
 
         assertTrue(ProxyUtils.isChunked(headers))
-        assertTrue(ProxyUtils.isChunked(serverRequest))
-        assertTrue(ProxyUtils.isChunked(clientResponse))
+        assertTrue(serverRequest.isChunked())
+        assertTrue(clientResponse.isChunked())
     }
 
     @Test
     fun isChunkedNotChunkedTest() {
         assertFalse(ProxyUtils.isChunked(headers))
-        assertFalse(ProxyUtils.isChunked(serverRequest))
-        assertFalse(ProxyUtils.isChunked(clientResponse))
+        assertFalse(serverRequest.isChunked())
+        assertFalse(clientResponse.isChunked())
     }
 
     @Test
     fun isGzippedTest() {
-        `when`(headers!!.get(HEADER_CONTENT_ENCODING)).thenReturn(CONTENT_ENCODING_GZIP)
+        whenever(headers.get(HEADER_CONTENT_ENCODING)).thenReturn(CONTENT_ENCODING_GZIP)
 
         assertTrue(ProxyUtils.isGzipped(headers))
-        assertTrue(ProxyUtils.isGzipped(clientResponse))
+        assertTrue(clientResponse.isGzipped())
     }
 
     @Test
     fun isGzippedNotGzippedTest() {
         assertFalse(ProxyUtils.isGzipped(headers))
-        assertFalse(ProxyUtils.isGzipped(clientResponse))
+        assertFalse(clientResponse.isGzipped())
     }
 
     @Test
@@ -77,34 +77,34 @@ class ProxyUtilsTest {
 
     @Test
     fun getUnknownContentType() {
-        `when`(headers!!.get(HEADER_CONTENT_TYPE)).thenReturn(CONTENT_TYPE_JSON)
+        whenever(headers.get(HEADER_CONTENT_TYPE)).thenReturn(CONTENT_TYPE_JSON)
         var contentType = ProxyUtils.getContentType(headers)
-        assertFalse(contentType.isPresent)
+        assertFalse(contentType != null)
 
-        contentType = ProxyUtils.getContentType(clientResponse)
-        assertFalse(contentType.isPresent)
+        contentType = clientResponse.getContentType()
+        assertFalse(contentType != null)
     }
 
     private fun assertContentTypeHeader(type: ContentType) {
-        `when`(headers!!.get(HEADER_CONTENT_TYPE)).thenReturn(type.contentType)
+        whenever(headers.get(HEADER_CONTENT_TYPE)).thenReturn(type.contentType)
 
         var contentType = ProxyUtils.getContentType(headers)
-        assertTrue(contentType.isPresent)
-        assertEquals(type, contentType.get())
+        assertTrue(contentType != null)
+        assertEquals(type, contentType)
 
-        contentType = ProxyUtils.getContentType(clientResponse)
-        assertTrue(contentType.isPresent)
-        assertEquals(type, contentType.get())
+        contentType = clientResponse.getContentType()
+        assertTrue(contentType != null)
+        assertEquals(type, contentType)
     }
 
     companion object {
-        private val HEADER_TRANSFER_ENCODING = "Transfer-Encoding"
-        private val HEADER_CONTENT_ENCODING = "Content-Encoding"
-        private val HEADER_CONTENT_TYPE = "Content-Type"
+        private const val HEADER_TRANSFER_ENCODING = "Transfer-Encoding"
+        private const val HEADER_CONTENT_ENCODING = "Content-Encoding"
+        private const val HEADER_CONTENT_TYPE = "Content-Type"
 
-        private val ACCEPT_ENCODING_CHUNKED = "chunked"
-        private val CONTENT_ENCODING_GZIP = "gzip"
-        private val CONTENT_TYPE_JSON = "application/json"
+        private const val ACCEPT_ENCODING_CHUNKED = "chunked"
+        private const val CONTENT_ENCODING_GZIP = "gzip"
+        private const val CONTENT_TYPE_JSON = "application/json"
     }
 
 }

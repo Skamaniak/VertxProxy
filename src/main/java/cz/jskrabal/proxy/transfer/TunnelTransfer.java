@@ -1,8 +1,7 @@
 package cz.jskrabal.proxy.transfer;
 
-import cz.jskrabal.proxy.config.ProxyConfiguration;
-import cz.jskrabal.proxy.config.enums.ConfigurationParameter;
-import cz.jskrabal.proxy.dto.NetworkSettings;
+import cz.jskrabal.proxy.config.NetworkConfig;
+import cz.jskrabal.proxy.config.ProxyConfig;
 import cz.jskrabal.proxy.pump.DataPump;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import io.vertx.core.Handler;
@@ -26,7 +25,7 @@ public class TunnelTransfer extends Transfer {
 	private static final int INDEX_HOST = 0;
 	private static final int INDEX_PORT = 1;
 
-	public TunnelTransfer(Vertx vertx, HttpClient client, ProxyConfiguration configuration,
+	public TunnelTransfer(Vertx vertx, HttpClient client, ProxyConfig configuration,
 			HttpServerRequest connectRequest) {
 		super(vertx, client, configuration, connectRequest);
 	}
@@ -35,7 +34,7 @@ public class TunnelTransfer extends Transfer {
 		LOGGER.debug("'{}' connect request from '{}' to '{}' received", id, upstreamRequest.remoteAddress(),
 				upstreamRequest.uri());
 
-		NetworkSettings nextTunnelProxy = getNextTunnelProxySettings();
+		NetworkConfig nextTunnelProxy = getNextTunnelProxySettings();
 		if (nextTunnelProxy != null) {
 			createTunnelThroughAnotherProxy(nextTunnelProxy);
 		} else {
@@ -43,7 +42,7 @@ public class TunnelTransfer extends Transfer {
 		}
 	}
 
-	private void createTunnelThroughAnotherProxy(NetworkSettings nextTunnelProxy) {
+	private void createTunnelThroughAnotherProxy(NetworkConfig nextTunnelProxy) {
 		resendConnect(nextTunnelProxy, downstreamResponse -> {
 			int responseStatusCode = downstreamResponse.statusCode();
 
@@ -65,12 +64,11 @@ public class TunnelTransfer extends Transfer {
 		});
 	}
 
-	private NetworkSettings getNextTunnelProxySettings() {
-		return configuration.getValue(ConfigurationParameter.NEXT_TUNNEL_PROXY,
-				NetworkSettings.class);
+	private NetworkConfig getNextTunnelProxySettings() {
+		return configuration.getNextTunnelProxy();
 	}
 
-	private void resendConnect(NetworkSettings nextProxySettings, Handler<HttpClientResponse> responseHandler,
+	private void resendConnect(NetworkConfig nextProxySettings, Handler<HttpClientResponse> responseHandler,
 			Handler<Throwable> exceptionHandler) {
 		LOGGER.debug("'{}' resending connect request from '{}' to '{}' to the next proxy in chain '{}'", id,
 				upstreamRequest.remoteAddress(), upstreamRequest.uri(), nextProxySettings);

@@ -1,34 +1,28 @@
 package cz.jskrabal.proxy
 
 import cz.jskrabal.proxy.acceptor.Acceptor
+import cz.jskrabal.proxy.config.ProxyConfig
 import cz.jskrabal.proxy.config.ProxyConfiguration
 import cz.jskrabal.proxy.transfer.HttpTransfer
 import cz.jskrabal.proxy.transfer.TunnelTransfer
-import io.vertx.core.AbstractVerticle
 import io.vertx.core.Future
 import io.vertx.core.Handler
 import io.vertx.core.http.*
-import io.vertx.core.logging.Logger
 import java.util.concurrent.TimeUnit
+import kotlin.reflect.KClass
 
-class Proxy : AbstractVerticle() {
+class Proxy : TypedConfigurationVerticle<ProxyConfig>() {
 
-    companion object {
-        private val LOGGER: Logger = loggerFor<Proxy>()
-    }
-
-    private lateinit var configuration: ProxyConfiguration
     private lateinit var httpClient: HttpClient
 
     @Throws(Exception::class)
     override fun start(startFuture: Future<Void>) {
         vertx.executeBlocking(Handler { event ->
-            configuration = loadConfig()
             httpClient = vertx.createHttpClient(createHttpClientOptions())
             vertx.createHttpServer(createHttpServerOptions())
-                    .requestHandler({ this.transfer(it) })
-                    .connectionHandler({ this.connect(it) })
-                    .listen(configuration.proxyPort, configuration.proxyHost) { result ->
+                    .requestHandler(this::transfer)
+                    .connectionHandler(this::connect)
+                    .listen(config.network.port, config.network.host) { result ->
                         if (result.succeeded()) {
                             event.complete()
                         } else {
@@ -38,29 +32,28 @@ class Proxy : AbstractVerticle() {
         }, startFuture.completer())
     }
 
+    override val configClass: KClass<ProxyConfig>
+        get() = ProxyConfig::class
+
     private fun createHttpServerOptions() = HttpServerOptions()
-            .setLogActivity(configuration.isUpstreamDebugLoggingEnabled)
-            .setIdleTimeout(configuration.upstreamIdleTimeout)
+            .setLogActivity(config.stream.upstream.debugLogging)
+            .setIdleTimeout(config.stream.upstream.idleTimeoutMillis)
 
     private fun createHttpClientOptions() = HttpClientOptions()
-            .setLogActivity(configuration.isDownstreamDebugLoggingEnabled)
-            .setConnectTimeout(configuration.downstreamConnectionTimeout)
-            .setIdleTimeout(TimeUnit.MILLISECONDS.toSeconds(configuration.downstreamIdleTimeout.toLong()).toInt())
+            .setLogActivity(config.stream.downstream.debugLogging)
+            .setConnectTimeout(config.stream.downstream.connectionTimeoutMillis)
+            .setIdleTimeout(TimeUnit.MILLISECONDS.toSeconds(config.stream.downstream.idleTimeoutMillis.toLong()).toInt())
 
-    private fun loadConfig(): ProxyConfiguration {
-        LOGGER.info("Loaded configuration '{}'", config().encodePrettily())
-        return ProxyConfiguration(config())
-    }
 
     private fun connect(httpConnection: HttpConnection) {
-        Acceptor(vertx, httpClient, configuration, httpConnection).start()
+        Acceptor(vertx, httpClient, ProxyConfiguration(config()), httpConnection).start()
     }
 
     private fun transfer(upstreamRequest: HttpServerRequest) {
         if (upstreamRequest.method() == HttpMethod.CONNECT) {
-            TunnelTransfer(vertx, httpClient, configuration, upstreamRequest)
+            TunnelTransfer(vertx, httpClient, config, upstreamRequest)
         } else {
-            HttpTransfer(vertx, httpClient, configuration, upstreamRequest)
+            HttpTransfer(vertx, httpClient, config, upstreamRequest)
         }.start()
     }
 }

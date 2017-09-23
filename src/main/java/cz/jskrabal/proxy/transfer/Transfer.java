@@ -1,8 +1,6 @@
 package cz.jskrabal.proxy.transfer;
 
-import cz.jskrabal.proxy.config.ProxyConfiguration;
-import cz.jskrabal.proxy.config.enums.ConfigurationParameter;
-import cz.jskrabal.proxy.config.enums.IdGeneratorType;
+import cz.jskrabal.proxy.config.ProxyConfig;
 import cz.jskrabal.proxy.util.ProxyUtils;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import io.vertx.core.MultiMap;
@@ -15,6 +13,7 @@ import io.vertx.core.http.HttpServerResponse;
 import io.vertx.core.net.SocketAddress;
 
 import java.nio.channels.UnresolvedAddressException;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeoutException;
@@ -27,17 +26,16 @@ public abstract class Transfer {
 	protected final Vertx vertx;
 	protected final HttpServerRequest upstreamRequest;
 	protected final HttpClient client;
-	protected final ProxyConfiguration configuration;
+	protected final ProxyConfig configuration;
 
-	protected Transfer(Vertx vertx, HttpClient client, ProxyConfiguration configuration,
+	protected Transfer(Vertx vertx, HttpClient client, ProxyConfig configuration,
 			HttpServerRequest upstreamRequest) {
 		this.vertx = vertx;
 		this.configuration = configuration;
 		this.upstreamRequest = upstreamRequest;
 		this.client = client;
 
-		String idGenerator = configuration.getValue(ConfigurationParameter.ID_GENERATOR, String.class);
-		id = IdGeneratorType.valueOf(idGenerator).generateId();
+		id = configuration.getIdGenerator().generateId();
 	}
 
 	public abstract void start();
@@ -72,7 +70,7 @@ public abstract class Transfer {
 	}
 
 	protected HttpClientRequest addRequestTimeout(HttpClientRequest request) {
-		long requestTimeout = configuration.getDownstreamRequestTimeout();
+		long requestTimeout = configuration.getStream().getDownstream().getHttpRequestTimeoutMillis();
 		if (requestTimeout > 0) {
 			request.setTimeout(requestTimeout);
 		}
@@ -108,8 +106,7 @@ public abstract class Transfer {
 
 	private Map<String, String> getCustomResponseHeaders() {
 		@SuppressWarnings("unchecked")
-		Map<String, String> customHeaders = configuration.getValue(ConfigurationParameter.CUSTOM_RESPONSE_HEADERS,
-				Map.class);
+		Map<String, String> customHeaders = configuration.getCustomHeaders().getAppendToResponse();
 		addResponseDynamicHeaders(customHeaders);
 
 		return customHeaders;
@@ -117,8 +114,7 @@ public abstract class Transfer {
 
 	private Map<String, String> getCustomRequestHeaders() {
 		@SuppressWarnings("unchecked")
-		Map<String, String> customHeaders = configuration.getValue(ConfigurationParameter.CUSTOM_REQUEST_HEADERS,
-				Map.class);
+		Map<String, String> customHeaders = configuration.getCustomHeaders().getAppendToRequest();
 		addRequestDynamicHeaders(customHeaders);
 
 		return customHeaders;
@@ -126,26 +122,24 @@ public abstract class Transfer {
 
 	private Set<String> getBlockedRequestHeaders() {
 		@SuppressWarnings("unchecked")
-		Set<String> blockedHeaders = (Set<String>) configuration.getValue(
-				ConfigurationParameter.REMOVE_REQUEST_HEADERS, Set.class);
+		Set<String> blockedHeaders = new HashSet<>(configuration.getCustomHeaders().getRemoveFromRequest());
 
 		return blockedHeaders;
 	}
 
 	private Set<String> getBlockedResponseHeaders() {
 		@SuppressWarnings("unchecked")
-		Set<String> blockedHeaders = (Set<String>) configuration.getValue(
-				ConfigurationParameter.REMOVE_RESPONSE_HEADERS, Set.class);
+		Set<String> blockedHeaders = new HashSet<>(configuration.getCustomHeaders().getRemoveFromResponse());
 
 		return blockedHeaders;
 	}
 
 	private void addCommonDynamicHeaders(Map<String, String> headers) {
-		if (configuration.getValue(ConfigurationParameter.ADD_TRANSFER_ID_HEADER, Boolean.class)) {
+		if (configuration.getCustomHeaders().getAddTransferIdHeader()) {
 			headers.put("X-Transfer-Id", id);
 		}
 
-		if (configuration.getValue(ConfigurationParameter.ADD_FORWARDED_FOR_HEADERS, Boolean.class)) {
+		if (configuration.getCustomHeaders().getAddForwardedByHeaders()) {
 			SocketAddress localAddress = upstreamRequest.localAddress();
 			headers.put("X-Forwarded-By-Ip", String.valueOf(localAddress.host()));
 			headers.put("X-Forwarded-By-Port", String.valueOf(localAddress.port()));
@@ -155,7 +149,7 @@ public abstract class Transfer {
 	private void addRequestDynamicHeaders(Map<String, String> headers) {
 		addCommonDynamicHeaders(headers);
 
-		if (configuration.getValue(ConfigurationParameter.ADD_FORWARDED_FOR_HEADERS, Boolean.class)) {
+		if (configuration.getCustomHeaders().getAddForwardedForHeaders()) {
 			SocketAddress remoteAddress = upstreamRequest.remoteAddress();
 			headers.put("X-Forwarded-For-Ip", String.valueOf(remoteAddress.host()));
 			headers.put("X-Forwarded-For-Port", String.valueOf(remoteAddress.port()));

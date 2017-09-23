@@ -1,5 +1,7 @@
 package cz.jskrabal.proxy.transfer;
 
+import cz.jskrabal.proxy.config.NetworkConfig;
+import cz.jskrabal.proxy.config.ProxyConfig;
 import cz.jskrabal.proxy.config.ProxyConfiguration;
 import cz.jskrabal.proxy.config.enums.ConfigurationParameter;
 import cz.jskrabal.proxy.dto.NetworkSettings;
@@ -20,7 +22,7 @@ import org.slf4j.LoggerFactory;
 public class HttpTransfer extends Transfer {
 	private static final Logger LOGGER = LoggerFactory.getLogger(HttpTransfer.class);
 
-	public HttpTransfer(Vertx vertx, HttpClient client, ProxyConfiguration configuration,
+	public HttpTransfer(Vertx vertx, HttpClient client, ProxyConfig configuration,
 			HttpServerRequest upstreamRequest) {
 		super(vertx, client, configuration, upstreamRequest);
 	}
@@ -30,8 +32,7 @@ public class HttpTransfer extends Transfer {
 		HttpMethod method = upstreamRequest.method();
 		String uri = upstreamRequest.uri();
 
-		NetworkSettings nextProxy = configuration.getValue(ConfigurationParameter.NEXT_HTTP_PROXY,
-				NetworkSettings.class);
+		NetworkConfig nextProxy = configuration.getNextHttpProxy();
 
 		HttpClientRequest downstreamRequest;
 		if (nextProxy != null) {

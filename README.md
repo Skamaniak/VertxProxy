@@ -95,7 +95,7 @@ There is a full explanation of each configuration option
 - Set Program arguments to "run cz.jskrabal.proxy.Proxy -conf src/main/resources/conf/default-proxy.json"
 - Set Working directory to the root directory of a project
 - Set JRE to Java 8
-![Run configuration for IntelliJ Idea](/documentation/readme/RunConfigExampleIdea.png?raw=true"configuration example")
+![Run configuration for IntelliJ Idea](/documentation/readme/RunConfigExampleIdea.png?raw=true "configuration example")
 
 ## Author
 Jan Škrabal <skrabalja(at)gmail.com>

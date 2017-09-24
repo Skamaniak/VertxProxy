@@ -11,6 +11,7 @@ import io.vertx.core.http.HttpClient
 import io.vertx.core.http.HttpClientResponse
 import io.vertx.core.http.HttpMethod
 import io.vertx.core.http.HttpServerRequest
+import io.vertx.core.net.NetClientOptions
 import io.vertx.core.net.NetSocket
 import java.util.function.Consumer
 
@@ -19,6 +20,9 @@ import java.util.function.Consumer
  */
 class TunnelTransfer(vertx: Vertx, client: HttpClient, configuration: ProxyConfig,
                      connectRequest: HttpServerRequest) : Transfer(vertx, client, configuration, connectRequest) {
+
+    private val netClientOptions: NetClientOptions = NetClientOptions().setIdleTimeout(configuration.stream.downstream.idleTimeoutMillis)
+    private val nextTunnelProxySettings: NetworkConfig? = configuration.nextTunnelProxy
 
     override fun start() {
         logger.debug("'{}' connect request from '{}' to '{}' received", id, upstreamRequest.remoteAddress(),
@@ -53,9 +57,6 @@ class TunnelTransfer(vertx: Vertx, client: HttpClient, configuration: ProxyConfi
         })
     }
 
-    private val nextTunnelProxySettings: NetworkConfig?
-        get() = configuration.nextTunnelProxy
-
     private fun resendConnect(nextProxySettings: NetworkConfig, responseHandler: Handler<HttpClientResponse>,
                               exceptionHandler: Handler<Throwable>) {
         logger.debug("'{}' resending connect request from '{}' to '{}' to the next proxy in chain '{}'", id,
@@ -70,13 +71,12 @@ class TunnelTransfer(vertx: Vertx, client: HttpClient, configuration: ProxyConfi
                 .end()
     }
 
+
     private fun createDirectTunnel() {
         val uri = upstreamRequest.uri()
-        val hostAndPort = uri.split(HOST_PORT_SEPARATOR.toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()
-        val port = Integer.parseInt(hostAndPort[INDEX_PORT])
-        val host = hostAndPort[INDEX_HOST]
+        val (host, port) = uri.split(HOST_PORT_SEPARATOR.toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()
 
-        vertx.createNetClient().connect(port, host) { event ->
+        vertx.createNetClient(netClientOptions).connect(Integer.parseInt(port), host) { event ->
             if (event.succeeded()) {
                 tunnelTo(event.result())
             } else {
@@ -142,7 +142,5 @@ class TunnelTransfer(vertx: Vertx, client: HttpClient, configuration: ProxyConfi
         private val logger = loggerFor<TunnelTransfer>()
         private const val STATUS_CONNECTION_ESTABLISHED = "Connection established"
         private const val HOST_PORT_SEPARATOR = ":"
-        private const val INDEX_HOST = 0
-        private const val INDEX_PORT = 1
     }
 }

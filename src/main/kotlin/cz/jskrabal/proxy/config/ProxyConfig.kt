@@ -28,10 +28,10 @@ data class StreamConfig(val upstream: UpstreamConfig = UpstreamConfig(),
                         val downstream: DownstreamConfig = DownstreamConfig())
 
 data class UpstreamConfig(val debugLogging: Boolean = false,
-                          val idleTimeoutMillis: Int = 0)
+                          val idleTimeoutMillis: Int = 30000)
 
 data class DownstreamConfig(val debugLogging: Boolean = false,
-                            val idleTimeoutMillis: Int = 0,
+                            val idleTimeoutMillis: Int = 30000,
                             val connectionTimeoutMillis: Int = 60000,
                             val httpRequestTimeoutMillis: Int = 0)
 

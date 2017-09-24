@@ -63,12 +63,11 @@ class ValidationFailedException(violations: Set<ConstraintViolation<*>>) : Throw
             get() = sb.isEmpty()
 
         internal fun append(constraintViolation: ConstraintViolation<*>) {
-            sb.append("\tConstraint violation on field ")
-                    .append(constraintViolation.propertyPath)
-                    .append(" with value ")
-                    .append(constraintViolation.invalidValue)
-                    .append(". Error is: ")
-                    .append(constraintViolation.message).append(". ")
+            sb.append(
+                    "\tConstraint violation on field ${constraintViolation.propertyPath} " +
+                            "with value ${constraintViolation.invalidValue}. " +
+                            "Error is: ${constraintViolation.message}."
+            )
         }
 
     }

@@ -28,12 +28,11 @@ abstract class Transfer protected constructor(protected val vertx: Vertx,
                 .setStatusCode(clientResponse.statusCode())
                 .setStatusMessage(clientResponse.statusMessage()).isChunked = clientResponse.isChunked()
 
-        val headers = serverResponse.headers()
-                .setAll(clientResponse.headers())
-                .addAll(customResponseHeaders)
-
-
-        headers.removeAll { blockedResponseHeaders.contains(it.key) }
+        with(serverResponse.headers()) {
+            setAll(clientResponse.headers())
+            addAll(customResponseHeaders)
+            removeAll { blockedResponseHeaders.contains(it.key) }
+        }
 
         return serverResponse
     }
@@ -42,11 +41,11 @@ abstract class Transfer protected constructor(protected val vertx: Vertx,
                                                         serverRequest: HttpServerRequest): HttpClientRequest {
         clientRequest.isChunked = serverRequest.isChunked()
 
-        val headers = clientRequest.headers()
-                .setAll(serverRequest.headers())
-                .addAll(customRequestHeaders)
-
-        headers.removeAll { blockedRequestHeaders.contains(it.key) }
+        with(clientRequest.headers()) {
+            setAll(serverRequest.headers())
+            addAll(customRequestHeaders)
+            removeAll { blockedRequestHeaders.contains(it.key) }
+        }
 
         return clientRequest
     }
@@ -75,15 +74,11 @@ abstract class Transfer protected constructor(protected val vertx: Vertx,
     }
 
     private fun exceptionToHttpStatus(throwable: Throwable): HttpResponseStatus {
-        val status: HttpResponseStatus
-        if (throwable is UnresolvedAddressException) {
-            status = HttpResponseStatus.NOT_FOUND
-        } else if (throwable is TimeoutException) {
-            status = HttpResponseStatus.GATEWAY_TIMEOUT
-        } else {
-            status = HttpResponseStatus.BAD_GATEWAY
+        return when (throwable) {
+            is UnresolvedAddressException -> HttpResponseStatus.NOT_FOUND
+            is TimeoutException -> HttpResponseStatus.GATEWAY_TIMEOUT
+            else -> HttpResponseStatus.BAD_GATEWAY
         }
-        return status
     }
 
     private val customResponseHeaders: Map<String, String>

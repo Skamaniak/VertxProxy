@@ -2,7 +2,6 @@ package cz.jskrabal.proxy
 
 import cz.jskrabal.proxy.acceptor.Acceptor
 import cz.jskrabal.proxy.config.ProxyConfig
-import cz.jskrabal.proxy.config.ProxyConfiguration
 import cz.jskrabal.proxy.transfer.HttpTransfer
 import cz.jskrabal.proxy.transfer.TunnelTransfer
 import io.vertx.core.Future
@@ -46,7 +45,7 @@ class Proxy : TypedConfigurationVerticle<ProxyConfig>() {
 
 
     private fun connect(httpConnection: HttpConnection) {
-        Acceptor(vertx, httpClient, ProxyConfiguration(config()), httpConnection).start()
+        Acceptor(vertx, httpClient, config, httpConnection).start()
     }
 
     private fun transfer(upstreamRequest: HttpServerRequest) {

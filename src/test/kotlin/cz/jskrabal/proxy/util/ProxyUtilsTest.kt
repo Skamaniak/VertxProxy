@@ -5,6 +5,7 @@ import cz.jskrabal.proxy.ProxyUtils
 import cz.jskrabal.proxy.getContentType
 import cz.jskrabal.proxy.isChunked
 import cz.jskrabal.proxy.isGzipped
+import cz.jskrabal.proxy.model.ContentType
 import io.vertx.core.MultiMap
 import io.vertx.core.http.HttpClientResponse
 import io.vertx.core.http.HttpServerRequest

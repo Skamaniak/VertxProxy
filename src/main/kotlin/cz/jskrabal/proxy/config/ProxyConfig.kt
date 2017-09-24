@@ -1,6 +1,5 @@
 package cz.jskrabal.proxy.config
 
-import cz.jskrabal.proxy.config.enums.IdGeneratorType
 import org.hibernate.validator.constraints.NotEmpty
 import org.hibernate.validator.constraints.Range
 import javax.validation.constraints.NotNull

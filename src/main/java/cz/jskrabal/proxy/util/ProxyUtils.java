@@ -2,6 +2,7 @@ package cz.jskrabal.proxy.util;
 
 import java.util.Optional;
 
+import cz.jskrabal.proxy.model.ContentType;
 import io.vertx.core.MultiMap;
 import io.vertx.core.http.HttpClientResponse;
 import io.vertx.core.http.HttpServerRequest;
@@ -43,7 +44,7 @@ public class ProxyUtils {
 
     public static Optional<ContentType> getContentType(MultiMap headers) {
         String value = headers.get(HEADER_CONTENT_TYPE);
-        return ContentType.fromContentType(value);
+        return Optional.ofNullable(ContentType.Companion.fromContentType(value));
     }
 
     private static boolean isHeaderEqualTo(MultiMap headers, String header, String expValue) {

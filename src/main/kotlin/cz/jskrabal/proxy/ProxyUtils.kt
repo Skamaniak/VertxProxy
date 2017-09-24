@@ -1,6 +1,6 @@
 package cz.jskrabal.proxy
 
-import cz.jskrabal.proxy.util.ContentType
+import cz.jskrabal.proxy.model.ContentType
 import io.vertx.core.MultiMap
 import io.vertx.core.http.HttpClientResponse
 import io.vertx.core.http.HttpServerRequest
@@ -39,7 +39,7 @@ internal object ProxyUtils {
             isHeaderEqualTo(headers, HEADER_CONTENT_ENCODING, CONTENT_ENCODING_GZIP)
 
     fun getContentType(headers: MultiMap): ContentType? =
-            ContentType.fromContentType(headers.get(HEADER_CONTENT_TYPE)).orElse(null)
+            ContentType.fromContentType(headers.get(HEADER_CONTENT_TYPE))
 
     private fun isHeaderEqualTo(headers: MultiMap, header: String, expValue: String) =
             headers.get(header) == expValue

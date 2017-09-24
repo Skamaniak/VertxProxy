@@ -120,7 +120,7 @@ public class TunnelTransfer extends Transfer {
 	}
 
 	private void createUpstreamHandlers(NetSocket upstreamSocket, NetSocket downstreamSocket) {
-		new DataPump<>(upstreamSocket, downstreamSocket, data ->
+		DataPump.Companion.create(upstreamSocket, downstreamSocket, data ->
 				LOGGER.debug("'{}' proxying upstream data (length '{}')", id, data.length())
 		).start();
 
@@ -136,7 +136,7 @@ public class TunnelTransfer extends Transfer {
 	}
 
 	private void createDownstreamHandlers(NetSocket upstreamSocket, NetSocket downstreamSocket) {
-		new DataPump<>(downstreamSocket, upstreamSocket, data ->
+		DataPump.Companion.create(downstreamSocket, upstreamSocket, data ->
 				LOGGER.debug("'{}' proxying downstream data (length '{}')", id, data.length())
 		).start();
 

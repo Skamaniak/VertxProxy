@@ -1,12 +1,9 @@
-package cz.jskrabal.proxy.config.enums
+package cz.jskrabal.proxy.config
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
-
-import java.util.HashSet
-import java.util.UUID
-
 import org.junit.Test
+import java.util.*
 
 /**
  * Created by janskrabal on 15/06/16.

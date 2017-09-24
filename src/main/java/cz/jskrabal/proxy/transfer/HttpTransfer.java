@@ -2,9 +2,6 @@ package cz.jskrabal.proxy.transfer;
 
 import cz.jskrabal.proxy.config.NetworkConfig;
 import cz.jskrabal.proxy.config.ProxyConfig;
-import cz.jskrabal.proxy.config.ProxyConfiguration;
-import cz.jskrabal.proxy.config.enums.ConfigurationParameter;
-import cz.jskrabal.proxy.dto.NetworkSettings;
 import cz.jskrabal.proxy.pump.DataPump;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
@@ -71,7 +68,7 @@ public class HttpTransfer extends Transfer {
 	}
 
 	private void createResponseHandlers(HttpClientResponse downstreamResponse) {
-		new DataPump<>(downstreamResponse, upstreamRequest.response(), data ->
+		DataPump.Companion.create(downstreamResponse, upstreamRequest.response(), data ->
 				LOGGER.debug("'{}' proxying response data (length '{}')", id, data.length())
 		).start();
 
@@ -82,7 +79,7 @@ public class HttpTransfer extends Transfer {
 	}
 
 	private void createRequestHandler(HttpClientRequest downstreamRequest) {
-		new DataPump<>(upstreamRequest, downstreamRequest, data ->
+		DataPump.Companion.create(upstreamRequest, downstreamRequest, data ->
 				LOGGER.debug("'{}' proxying request data (length '{}')", id, data.length())
 		).start();
 

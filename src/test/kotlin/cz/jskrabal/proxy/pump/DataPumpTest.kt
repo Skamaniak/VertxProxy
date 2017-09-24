@@ -34,7 +34,7 @@ class DataPumpTest {
 
     @Test
     fun dataPumpTest() {
-        DataPump(input, output) { _ -> }.start()
+        DataPump.create(input, output).start()
         val inputHandler = getInputHandler(input)
 
         inputHandler.handle(STRING_DATA)
@@ -47,7 +47,7 @@ class DataPumpTest {
     @Test
     fun dataPumpWithFullWriteQueueTest() {
         whenever(output.writeQueueFull()).thenReturn(true)
-        DataPump(input, output) { _ -> }.start()
+        DataPump.create(input, output).start()
 
         val inputHandler = getInputHandler(input)
         inputHandler.handle(STRING_DATA)
@@ -62,7 +62,7 @@ class DataPumpTest {
     @Test
     fun dataPumpInputRestoredAfterOutputDrainedTest() {
         whenever(output.writeQueueFull()).thenReturn(true)
-        DataPump(input, output) { _ -> }.start()
+        DataPump.create(input, output).start()
 
         val inputHandler = getInputHandler(input)
 

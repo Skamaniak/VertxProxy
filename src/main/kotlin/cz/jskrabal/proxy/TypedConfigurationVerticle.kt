@@ -11,7 +11,7 @@ import kotlin.reflect.KClass
 
 abstract class TypedConfigurationVerticle<T : Any> : AbstractVerticle() {
 
-    abstract val configClass: KClass<T>
+    protected abstract val configClass: KClass<T>
 
     val config: T by lazy {
         try {
@@ -20,10 +20,15 @@ abstract class TypedConfigurationVerticle<T : Any> : AbstractVerticle() {
             if (!violations.isEmpty()) {
                 throw ValidationFailedException(violations)
             }
+            logger.info("Loaded configuration: $tmp")
             tmp
         } catch (ex: IOException) {
             throw InvalidConfigurationException(ex)
         }
+    }
+
+    companion object {
+        private val logger = loggerFor<TypedConfigurationVerticle<*>>()
     }
 
 }

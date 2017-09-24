@@ -12,13 +12,26 @@ import kotlin.reflect.KClass
 
 class Proxy : TypedConfigurationVerticle<ProxyConfig>() {
 
+    override val configClass: KClass<ProxyConfig> = ProxyConfig::class
+
     private lateinit var httpClient: HttpClient
+
+    private val httpServerOptions
+        get() = HttpServerOptions()
+                .setLogActivity(config.stream.upstream.debugLogging)
+                .setIdleTimeout(config.stream.upstream.idleTimeoutMillis)
+
+    private val httpClientOptions
+        get() = HttpClientOptions()
+                .setLogActivity(config.stream.downstream.debugLogging)
+                .setConnectTimeout(config.stream.downstream.connectionTimeoutMillis)
+                .setIdleTimeout(TimeUnit.MILLISECONDS.toSeconds(config.stream.downstream.idleTimeoutMillis.toLong()).toInt())
 
     @Throws(Exception::class)
     override fun start(startFuture: Future<Void>) {
         vertx.executeBlocking(Handler { event ->
-            httpClient = vertx.createHttpClient(createHttpClientOptions())
-            vertx.createHttpServer(createHttpServerOptions())
+            httpClient = vertx.createHttpClient(httpClientOptions)
+            vertx.createHttpServer(httpServerOptions)
                     .requestHandler(this::transfer)
                     .connectionHandler(this::connect)
                     .listen(config.network.port, config.network.host) { result ->
@@ -30,19 +43,6 @@ class Proxy : TypedConfigurationVerticle<ProxyConfig>() {
                     }
         }, startFuture.completer())
     }
-
-    override val configClass: KClass<ProxyConfig>
-        get() = ProxyConfig::class
-
-    private fun createHttpServerOptions() = HttpServerOptions()
-            .setLogActivity(config.stream.upstream.debugLogging)
-            .setIdleTimeout(config.stream.upstream.idleTimeoutMillis)
-
-    private fun createHttpClientOptions() = HttpClientOptions()
-            .setLogActivity(config.stream.downstream.debugLogging)
-            .setConnectTimeout(config.stream.downstream.connectionTimeoutMillis)
-            .setIdleTimeout(TimeUnit.MILLISECONDS.toSeconds(config.stream.downstream.idleTimeoutMillis.toLong()).toInt())
-
 
     private fun connect(httpConnection: HttpConnection) {
         Acceptor(vertx, httpClient, config, httpConnection).start()

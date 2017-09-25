@@ -1,18 +1,16 @@
-package cz.jskrabal.proxy
+package cz.jskrabal.proxy.verticle
 
 import cz.jskrabal.proxy.acceptor.Acceptor
 import cz.jskrabal.proxy.config.ProxyConfig
 import cz.jskrabal.proxy.transfer.HttpTransfer
 import cz.jskrabal.proxy.transfer.TunnelTransfer
+import io.vertx.core.AbstractVerticle
 import io.vertx.core.Future
 import io.vertx.core.Handler
 import io.vertx.core.http.*
 import java.util.concurrent.TimeUnit
-import kotlin.reflect.KClass
 
-class Proxy : TypedConfigurationVerticle<ProxyConfig>() {
-
-    override val configClass: KClass<ProxyConfig> = ProxyConfig::class
+class ProxyVerticle(private val port: Int, private val config: ProxyConfig) : AbstractVerticle() {
 
     private lateinit var httpClient: HttpClient
 
@@ -34,7 +32,7 @@ class Proxy : TypedConfigurationVerticle<ProxyConfig>() {
             vertx.createHttpServer(httpServerOptions)
                     .requestHandler(this::transfer)
                     .connectionHandler(this::connect)
-                    .listen(config.network.port, config.network.host) { result ->
+                    .listen(port, config.network.host) { result ->
                         if (result.succeeded()) {
                             event.complete()
                         } else {

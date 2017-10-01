@@ -15,7 +15,7 @@ import kotlin.collections.set
 interface ProxyService {
 
     @Fluent
-    fun deployProxy(proxy: JsonObject, result: Handler<AsyncResult<Void>>): ProxyService
+    fun deployProxy(proxy: JsonObject, result: Handler<AsyncResult<String>>): ProxyService
 
     @Fluent
     fun undeployProxy(proxyId: String, result: Handler<AsyncResult<Void>>): ProxyService
@@ -35,21 +35,25 @@ class ProxyServiceImpl(private val vertx: Vertx, private val config: ProxyConfig
     private val proxyRegistry = vertx.sharedData().getLocalMap<String, JsonObject>("proxy-registry")
     private val persistenceService = PersistenceServiceFactory.createProxy(vertx, PersistenceServiceVerticle.SERVICE_ADDRESS)
 
-    override fun deployProxy(proxy: JsonObject, result: Handler<AsyncResult<Void>>): ProxyService {
+    override fun deployProxy(proxy: JsonObject, result: Handler<AsyncResult<String>>): ProxyService {
         var mapped = proxy.mapTo(Proxy::class.java)
         if (!proxyRegistry.containsKey(mapped.id)) {
-            persistenceService.save(proxyKey(mapped.id), proxy, Handler {
-                if (it.succeeded()) {
-                    vertx.deployVerticle(ProxyVerticle(mapped, config)) {
-                        mapped = mapped.copy(deploymentId = it.result())
-                        proxyRegistry[mapped.id] = mapped.toJson()
-                        logger.info("Deployed proxy ID: ${mapped.id}")
-                        result.handle(Future.succeededFuture())
+            if (proxyRegistry.filterValues { it.getInteger("port") == mapped.port }.isEmpty()) {
+                persistenceService.save(proxyKey(mapped.id), proxy, Handler {
+                    if (it.succeeded()) {
+                        vertx.deployVerticle(ProxyVerticle(mapped, config)) {
+                            mapped = mapped.copy(deploymentId = it.result())
+                            proxyRegistry[mapped.id] = mapped.toJson()
+                            logger.info("Deployed proxy ID: ${mapped.id}")
+                            result.handle(Future.succeededFuture(mapped.id))
+                        }
+                    } else {
+                        result.handle(Future.failedFuture(it.cause()))
                     }
-                } else {
-                    result.handle(Future.failedFuture(it.cause()))
-                }
-            })
+                })
+            } else {
+                result.handle(Future.failedFuture(IllegalArgumentException("Port ${mapped.port} already assigned.")))
+            }
         } else {
             result.handle(Future.succeededFuture())
         }
@@ -86,7 +90,7 @@ class ProxyServiceImpl(private val vertx: Vertx, private val config: ProxyConfig
         persistenceService.all(".*-proxy", Handler {
             if (it.succeeded()) {
                 CompositeFuture.all(it.result().map {
-                    val future = Future.future<Void>()
+                    val future = Future.future<String>()
                     deployProxy(it, future)
                     future
                 }.toList()).setHandler {

@@ -2,6 +2,7 @@ package cz.jskrabal.proxy.verticle
 
 import cz.jskrabal.proxy.config.RestConfig
 import cz.jskrabal.proxy.loggerFor
+import cz.jskrabal.proxy.resource.ProxyResource
 import cz.jskrabal.proxy.service.ProxyServiceFactory
 import io.vertx.core.AbstractVerticle
 import io.vertx.core.Future
@@ -14,19 +15,12 @@ class RestVerticle(private val config: RestConfig) : AbstractVerticle() {
     private val router = Router.router(vertx)
 
     override fun start(startFuture: Future<Void>) {
-        val proxyService = ProxyServiceFactory.createProxy(vertx, ProxyServiceVerticle.SERVICE_ADDRESS)
-        router.route().handler(BodyHandler.create())
-
-        router.post("/proxy").handler { rc ->
-            val proxy = rc.bodyAsJson
-            proxyService.deployProxy(proxy, Handler {
-                rc.response().end()
-            })
-        }
-        router.delete("/proxy/:id").handler { rc ->
-            proxyService.undeployProxy(rc.request().getParam("id"), Handler {
-                rc.response().end()
-            })
+        val proxyResource = ProxyResource(ProxyServiceFactory.createProxy(vertx, ProxyServiceVerticle.SERVICE_ADDRESS))
+        with(router) {
+            route().handler(BodyHandler.create())
+            get("/proxy/:id").handler(proxyResource.getProxy)
+            delete("/proxy/:id").handler(proxyResource.deleteProxy)
+            post("/proxy").handler(proxyResource.deployProxy)
         }
 
         vertx.executeBlocking(Handler { event ->
@@ -34,6 +28,7 @@ class RestVerticle(private val config: RestConfig) : AbstractVerticle() {
                     .requestHandler(router::accept)
                     .listen(config.port, config.host) { result ->
                         if (result.succeeded()) {
+                            logger.info("Started ${RestVerticle::class.simpleName} instance. DeploymentID: ${deploymentID()}")
                             event.complete()
                         } else {
                             event.fail(result.cause())

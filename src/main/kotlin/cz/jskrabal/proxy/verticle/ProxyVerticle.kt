@@ -2,15 +2,16 @@ package cz.jskrabal.proxy.verticle
 
 import cz.jskrabal.proxy.acceptor.Acceptor
 import cz.jskrabal.proxy.config.ProxyConfig
+import cz.jskrabal.proxy.loggerFor
+import cz.jskrabal.proxy.model.Proxy
 import cz.jskrabal.proxy.transfer.HttpTransfer
 import cz.jskrabal.proxy.transfer.TunnelTransfer
 import io.vertx.core.AbstractVerticle
 import io.vertx.core.Future
-import io.vertx.core.Handler
 import io.vertx.core.http.*
 import java.util.concurrent.TimeUnit
 
-class ProxyVerticle(private val port: Int, private val config: ProxyConfig) : AbstractVerticle() {
+class ProxyVerticle(private val proxy: Proxy, private val config: ProxyConfig) : AbstractVerticle() {
 
     private lateinit var httpClient: HttpClient
 
@@ -27,19 +28,18 @@ class ProxyVerticle(private val port: Int, private val config: ProxyConfig) : Ab
 
     @Throws(Exception::class)
     override fun start(startFuture: Future<Void>) {
-        vertx.executeBlocking(Handler { event ->
-            httpClient = vertx.createHttpClient(httpClientOptions)
-            vertx.createHttpServer(httpServerOptions)
-                    .requestHandler(this::transfer)
-                    .connectionHandler(this::connect)
-                    .listen(port, config.network.host) { result ->
-                        if (result.succeeded()) {
-                            event.complete()
-                        } else {
-                            event.fail(result.cause())
-                        }
+        httpClient = vertx.createHttpClient(httpClientOptions)
+        vertx.createHttpServer(httpServerOptions)
+                .requestHandler(this::transfer)
+                .connectionHandler(this::connect)
+                .listen(proxy.port, config.host) { result ->
+                    if (result.succeeded()) {
+                        logger.info("Started ${ProxyVerticle::class.simpleName} instance. DeploymentID: ${deploymentID()}")
+                        startFuture.complete()
+                    } else {
+                        startFuture.fail(result.cause())
                     }
-        }, startFuture.completer())
+                }
     }
 
     private fun connect(httpConnection: HttpConnection) {
@@ -53,4 +53,9 @@ class ProxyVerticle(private val port: Int, private val config: ProxyConfig) : Ab
             HttpTransfer(vertx, httpClient, config, upstreamRequest)
         }.start()
     }
+
+    companion object {
+        private val logger = loggerFor<ProxyVerticle>()
+    }
+
 }

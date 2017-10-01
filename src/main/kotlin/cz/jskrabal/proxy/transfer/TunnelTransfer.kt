@@ -1,5 +1,6 @@
 package cz.jskrabal.proxy.transfer
 
+import cz.jskrabal.proxy.ResourcePool
 import cz.jskrabal.proxy.config.NetworkConfig
 import cz.jskrabal.proxy.config.ProxyConfig
 import cz.jskrabal.proxy.loggerFor

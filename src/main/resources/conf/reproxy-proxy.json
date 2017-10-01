@@ -1,14 +1,15 @@
 {
-  "network": {
-    "port": 7071,
-    "host": "0.0.0.0"
+  "admin": {
+    "port": 8000
   },
-  "nextTunnelProxy": {
-    "port": 7070,
-    "host": "0.0.0.0"
-  },
-  "nextHttpProxy": {
-    "port": 7070,
-    "host": "0.0.0.0"
+  "proxy": {
+    "nextTunnelProxy": {
+      "port": 7070,
+      "host": "0.0.0.0"
+    },
+    "nextHttpProxy": {
+      "port": 7070,
+      "host": "0.0.0.0"
+    }
   }
 }

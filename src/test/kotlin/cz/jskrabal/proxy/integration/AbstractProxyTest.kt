@@ -1,6 +1,6 @@
 package cz.jskrabal.proxy.integration
 
-import cz.jskrabal.proxy.verticle.ProxyVerticle
+import cz.jskrabal.proxy.Node
 import cz.jskrabal.proxy.support.ProxyTestUtils
 import cz.jskrabal.proxy.support.ResponseType
 import cz.jskrabal.proxy.support.TestHttpServerVerticle
@@ -35,7 +35,7 @@ abstract class AbstractProxyTest(private val configPath: String) {
 
         val configuration = readTestConfig(configPath)
         val options = DeploymentOptions().setConfig(configuration)
-        vertx.deployVerticle(ProxyVerticle::class.java.name, options) { result ->
+        vertx.deployVerticle(Node::class.java.name, options) { result ->
             context.asyncAssertSuccess<String>().handle(result)
             async.countDown()
         }

@@ -1,11 +1,12 @@
 {
-  "network": {
-    "port": 8080,
-    "host": "localhost"
+  "admin": {
+    "port": 8000
   },
-  "stream": {
-    "downstream": {
-      "httpRequestTimeoutMillis" : 500
+  "proxy": {
+    "stream": {
+      "downstream": {
+        "httpRequestTimeoutMillis": 500
+      }
     }
   }
 }

@@ -9,6 +9,7 @@ import io.vertx.codegen.annotations.Fluent
 import io.vertx.codegen.annotations.ProxyGen
 import io.vertx.core.*
 import io.vertx.core.json.JsonObject
+import io.vertx.serviceproxy.ProxyHelper
 import kotlin.collections.set
 
 @ProxyGen
@@ -119,6 +120,6 @@ object ProxyServiceFactory {
     }
 
     fun createProxy(vertx: Vertx, address: String): ProxyService {
-        return ProxyServiceVertxEBProxy(vertx, address)
+        return ProxyHelper.createProxy(ProxyService::class.java, vertx, address)
     }
 }

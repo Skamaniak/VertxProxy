@@ -16,9 +16,14 @@ class Node : TypedConfigurationVerticle<NodeConfig>() {
     override val configClass = NodeConfig::class
 
     override fun start(startFuture: Future<Void>) {
+        val logger = loggerFor<Node>()
+
+        logger.info("Starting Proxy Node")
+
         Json.mapper.registerKotlinModule()
+
         vertx.exceptionHandler {
-            loggerFor<Node>().error("Uncaught exception", it)
+            logger.error("Uncaught exception", it)
         }
 
         val persistenceFuture = vertx.deployVerticleFuture(PersistenceServiceVerticle(config.persistence))

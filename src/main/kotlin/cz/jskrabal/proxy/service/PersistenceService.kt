@@ -6,6 +6,7 @@ import io.vertx.codegen.annotations.Fluent
 import io.vertx.codegen.annotations.ProxyGen
 import io.vertx.core.*
 import io.vertx.core.json.JsonObject
+import io.vertx.serviceproxy.ProxyHelper
 import java.io.File
 
 
@@ -125,7 +126,7 @@ object PersistenceServiceFactory {
     }
 
     fun createProxy(vertx: Vertx, address: String): PersistenceService {
-        return PersistenceServiceVertxEBProxy(vertx, address)
+        return ProxyHelper.createProxy(PersistenceService::class.java, vertx, address)
     }
 }
 

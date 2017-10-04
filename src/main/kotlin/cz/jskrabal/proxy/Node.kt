@@ -8,7 +8,6 @@ import cz.jskrabal.proxy.verticle.RestVerticle
 import cz.jskrabal.proxy.verticle.TypedConfigurationVerticle
 import io.vertx.core.CompositeFuture
 import io.vertx.core.Future
-import io.vertx.core.eventbus.DeliveryOptions
 import io.vertx.core.json.Json
 
 
@@ -18,6 +17,9 @@ class Node : TypedConfigurationVerticle<NodeConfig>() {
 
     override fun start(startFuture: Future<Void>) {
         Json.mapper.registerKotlinModule()
+        vertx.exceptionHandler {
+            loggerFor<Node>().error("Uncaught exception", it)
+        }
 
         val persistenceFuture = vertx.deployVerticleFuture(PersistenceServiceVerticle(config.persistence))
         val proxyFuture = vertx.deployVerticleFuture(ProxyServiceVerticle(config.proxy))
@@ -25,15 +27,11 @@ class Node : TypedConfigurationVerticle<NodeConfig>() {
 
         CompositeFuture.all(persistenceFuture, proxyFuture, restFuture).setHandler {
             if (it.succeeded()) {
-                initProxies()
+                vertx.eventBus().sendAction(ProxyServiceVerticle.SERVICE_ADDRESS, "reload")
                 startFuture.succeeded()
             } else {
                 startFuture.fail(it.cause())
             }
         }
-    }
-
-    private fun initProxies() {
-        vertx.eventBus().send(ProxyServiceVerticle.SERVICE_ADDRESS, null, DeliveryOptions().addHeader("action", "reload"))
     }
 }

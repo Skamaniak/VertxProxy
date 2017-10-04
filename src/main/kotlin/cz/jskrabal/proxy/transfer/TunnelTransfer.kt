@@ -13,7 +13,6 @@ import io.vertx.core.http.HttpMethod
 import io.vertx.core.http.HttpServerRequest
 import io.vertx.core.net.NetClientOptions
 import io.vertx.core.net.NetSocket
-import java.util.function.Consumer
 
 /**
  * Created by janskrabal on 31/05/16.
@@ -107,32 +106,32 @@ class TunnelTransfer(vertx: Vertx, client: HttpClient, configuration: ProxyConfi
     }
 
     private fun createUpstreamHandlers(upstreamSocket: NetSocket, downstreamSocket: NetSocket) {
-        DataPump.create(upstreamSocket, downstreamSocket, Consumer { data ->
+        DataPump.create(upstreamSocket, downstreamSocket) { data ->
             logger.debug("'{}' proxying upstream data (length '{}')", id, data.length())
-        }).start()
+        }.start()
 
-        upstreamSocket.closeHandler { _ ->
+        upstreamSocket.closeHandler {
             logger.debug("'{}' closed (upstream)", id)
             downstreamSocket.close()
         }
 
-        upstreamSocket.endHandler { _ ->
+        upstreamSocket.endHandler {
             logger.trace("'{}' ended (upstream)", id)
             downstreamSocket.end()
         }
     }
 
     private fun createDownstreamHandlers(upstreamSocket: NetSocket, downstreamSocket: NetSocket) {
-        DataPump.create(downstreamSocket, upstreamSocket, Consumer { data ->
+        DataPump.create(downstreamSocket, upstreamSocket) { data ->
             logger.debug("'{}' proxying downstream data (length '{}')", id, data.length())
-        }).start()
+        }.start()
 
-        downstreamSocket.closeHandler { _ ->
+        downstreamSocket.closeHandler {
             logger.debug("'{}' closed (downstream)", id)
             upstreamSocket.close()
         }
 
-        downstreamSocket.endHandler { _ ->
+        downstreamSocket.endHandler {
             logger.trace("'{}' ended (downstream)", id)
             upstreamSocket.end()
         }

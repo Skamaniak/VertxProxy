@@ -4,6 +4,8 @@ import io.vertx.core.DeploymentOptions
 import io.vertx.core.Future
 import io.vertx.core.Verticle
 import io.vertx.core.Vertx
+import io.vertx.core.eventbus.DeliveryOptions
+import io.vertx.core.eventbus.EventBus
 
 
 fun Vertx.deployVerticleFuture(verticle: Verticle): Future<String> {
@@ -24,4 +26,8 @@ fun Vertx.deployVerticleFuture(name: String, options: DeploymentOptions): Future
     val future = Future.future<String>()
     deployVerticle(name, options, future.completer())
     return future
+}
+
+fun EventBus.sendAction(address: String, action: String): EventBus {
+    return this.send(address, null, DeliveryOptions().addHeader("action", action))
 }

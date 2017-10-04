@@ -3,20 +3,19 @@ package cz.jskrabal.proxy.pump
 import io.vertx.core.streams.Pump
 import io.vertx.core.streams.ReadStream
 import io.vertx.core.streams.WriteStream
-import java.util.function.Consumer
 
 /**
  * Created by janskrabal on 01/07/16.
  */
 class DataPump<T> private constructor(private val input: ReadStream<T>,
                                       private val output: WriteStream<T>,
-                                      private inline val interceptor: Consumer<T>) : Pump {
+                                      private inline val interceptor: (T) -> Unit) : Pump {
 
     private var pumped: Int = 0
 
     override fun start(): Pump {
         input.handler { data ->
-            interceptor.accept(data)
+            interceptor.invoke(data)
 
             output.write(data)
             if (output.writeQueueFull()) {
@@ -47,7 +46,7 @@ class DataPump<T> private constructor(private val input: ReadStream<T>,
             return Pump.pump(input, output)
         }
 
-        fun <T> create(input: ReadStream<T>, output: WriteStream<T>, interceptor: Consumer<T>): Pump {
+        fun <T> create(input: ReadStream<T>, output: WriteStream<T>, interceptor: (T) -> Unit): Pump {
             return DataPump(input, output, interceptor)
         }
     }

@@ -6,7 +6,6 @@ import cz.jskrabal.proxy.pump.DataPump
 import io.vertx.core.Handler
 import io.vertx.core.Vertx
 import io.vertx.core.http.*
-import java.util.function.Consumer
 
 /**
  * Created by janskrabal on 01/06/16.
@@ -57,22 +56,22 @@ class HttpTransfer(vertx: Vertx, client: HttpClient, configuration: ProxyConfig,
     }
 
     private fun createResponseHandlers(downstreamResponse: HttpClientResponse) {
-        DataPump.create(downstreamResponse, upstreamRequest.response(), Consumer { data ->
+        DataPump.create(downstreamResponse, upstreamRequest.response()) { data ->
             logger.debug("'{}' proxying response data (length '{}')", id, data.length())
-        }).start()
+        }.start()
 
-        downstreamResponse.endHandler { _ ->
+        downstreamResponse.endHandler {
             logger.debug("'{}' ended (downstream)", id)
             upstreamRequest.response().end()
         }
     }
 
     private fun createRequestHandler(downstreamRequest: HttpClientRequest) {
-        DataPump.create(upstreamRequest, downstreamRequest, Consumer { data ->
+        DataPump.create(upstreamRequest, downstreamRequest) { data ->
             logger.debug("'{}' proxying request data (length '{}')", id, data.length())
-        }).start()
+        }.start()
 
-        upstreamRequest.endHandler { _ ->
+        upstreamRequest.endHandler {
             logger.debug("'{}' ended (upstream)", id)
             downstreamRequest.end()
         }

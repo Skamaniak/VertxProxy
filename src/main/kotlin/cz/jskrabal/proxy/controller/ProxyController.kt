@@ -1,6 +1,7 @@
 package cz.jskrabal.proxy.controller
 
 import com.github.aesteve.vertx.nubes.annotations.Controller
+import com.github.aesteve.vertx.nubes.annotations.mixins.ContentType
 import com.github.aesteve.vertx.nubes.annotations.params.Param
 import com.github.aesteve.vertx.nubes.annotations.params.RequestBody
 import com.github.aesteve.vertx.nubes.annotations.routing.http.DELETE
@@ -11,7 +12,6 @@ import cz.jskrabal.proxy.service.ProxyService
 import cz.jskrabal.proxy.verticle.ProxyServiceVerticle
 import io.vertx.core.Handler
 import io.vertx.core.http.HttpServerResponse
-import io.vertx.core.json.Json
 import io.vertx.core.json.JsonObject
 import io.vertx.ext.web.RoutingContext
 
@@ -22,32 +22,31 @@ class ProxyController {
     private lateinit var proxyService: ProxyService
 
     @POST("/")
+    @ContentType("application/json")
     fun deployProxy(rc: RoutingContext, @RequestBody proxy: JsonObject) {
         proxyService.deployProxy(proxy, Handler {
-            if (it.succeeded()) {
-                if (it.result() != null) {
-                    rc.response()
+            when {
+                it.succeeded() -> when {
+                    it.result() != null -> rc.response()
                             .setStatusCode(201)
-                            .putHeader("Location", "/proxy/${it.result()}")
+                            .putHeader("Location", "/api/v1/proxy/${it.result()}")
                             .end()
-                } else {
-                    rc.response()
-                            .setStatusCode(200)
+                    else -> rc.response()
+                            .setStatusCode(204)
                             .end()
                 }
-            } else {
-                rc.fail(it.cause())
+                else -> rc.fail(it.cause())
             }
         })
     }
 
     @GET("/:id")
+    @ContentType("application/json")
     fun getProxy(rc: RoutingContext, @Param("id") id: String) {
         proxyService.getProxy(id, Handler {
-            if (it.succeeded() && it.result() != null) {
-                rc.response().endWithJson(it.result())
-            } else {
-                rc.fail(404)
+            when {
+                it.succeeded() && it.result() != null -> rc.response().end(it.result())
+                else -> rc.fail(404)
             }
         })
     }
@@ -55,15 +54,15 @@ class ProxyController {
     @DELETE("/:id")
     fun deleteProxy(rc: RoutingContext, @Param("id") id: String) {
         proxyService.undeployProxy(id, Handler {
-            if (it.succeeded()) {
-                rc.response().end()
-            } else {
-                rc.fail(it.cause())
+            when {
+                it.succeeded() -> rc.response().end()
+                else -> rc.fail(it.cause())
             }
         })
     }
 
-    private fun HttpServerResponse.endWithJson(obj: Any) {
-        this.putHeader("Content-Type", "application/json").end(Json.encode(obj))
+    private fun HttpServerResponse.end(obj: JsonObject) {
+        this.putHeader("Content-Type", "application/json")
+                .end(obj.toBuffer())
     }
 }

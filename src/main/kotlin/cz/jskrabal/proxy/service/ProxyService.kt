@@ -37,14 +37,15 @@ class ProxyServiceImpl(private val vertx: Vertx, private val config: ProxyConfig
     private val persistenceService = PersistenceServiceFactory.createProxy(vertx, PersistenceServiceVerticle.SERVICE_ADDRESS)
 
     override fun deployProxy(proxy: JsonObject, result: Handler<AsyncResult<String>>): ProxyService {
-        var mapped = proxy.mapTo(Proxy::class.java)
+        val mapped = proxy.mapTo(Proxy::class.java)
         if (!proxyRegistry.containsKey(mapped.id)) {
-            if (proxyRegistry.filterValues { it.getInteger("port") == mapped.port }.isEmpty()) {
+            if (proxyRegistry.none { it.value.getInteger("port") == mapped.port }) {
                 persistenceService.save(proxyKey(mapped.id), proxy, Handler {
                     if (it.succeeded()) {
                         vertx.deployVerticle(ProxyVerticle(mapped, config)) {
-                            mapped = mapped.copy(deploymentId = it.result())
-                            proxyRegistry[mapped.id] = mapped.toJson()
+                            proxyRegistry[mapped.id] = mapped
+                                    .copy(deploymentId = it.result())
+                                    .toJson()
                             logger.info("Deployed proxy ID: ${mapped.id}")
                             result.handle(Future.succeededFuture(mapped.id))
                         }
@@ -91,9 +92,9 @@ class ProxyServiceImpl(private val vertx: Vertx, private val config: ProxyConfig
         persistenceService.all(".*-proxy", Handler {
             if (it.succeeded()) {
                 CompositeFuture.all(it.result().map {
-                    val future = Future.future<String>()
-                    deployProxy(it, future)
-                    future
+                    Future.future<String>().apply {
+                        deployProxy(it, this.completer())
+                    }
                 }.toList()).setHandler {
                     if (it.succeeded()) {
                         result.handle(Future.succeededFuture())

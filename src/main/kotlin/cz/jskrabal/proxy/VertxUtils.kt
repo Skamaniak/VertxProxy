@@ -17,15 +17,15 @@ fun Vertx.deployVerticleFuture(name: String): Future<String> {
 }
 
 fun Vertx.deployVerticleFuture(verticle: Verticle, options: DeploymentOptions): Future<String> {
-    val future = Future.future<String>()
-    deployVerticle(verticle, options, future.completer())
-    return future
+    return Future.future<String>().apply {
+        deployVerticle(verticle, options, this.completer())
+    }
 }
 
 fun Vertx.deployVerticleFuture(name: String, options: DeploymentOptions): Future<String> {
-    val future = Future.future<String>()
-    deployVerticle(name, options, future.completer())
-    return future
+    return Future.future<String>().apply {
+        deployVerticle(name, options, this.completer())
+    }
 }
 
 fun EventBus.sendAction(address: String, action: String): EventBus {

@@ -1,12 +1,7 @@
 {
-  "admin": {
-    "port": 8000
-  },
-  "proxy": {
-    "stream": {
-      "downstream": {
-        "httpRequestTimeoutMillis": 500
-      }
+  "stream": {
+    "downstream": {
+      "httpRequestTimeoutMillis": 500
     }
   }
 }

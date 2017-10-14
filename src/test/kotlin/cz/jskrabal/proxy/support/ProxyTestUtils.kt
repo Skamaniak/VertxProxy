@@ -10,7 +10,7 @@ import io.vertx.core.http.HttpMethod
 object ProxyTestUtils {
 
     val HTTP_SERVER_PORT = 7070
-    val PROXY_PORT = 8080
+    val PROXY_PORT = 7000
     val PROXY_HOST = "localhost"
     val BASE_REQUEST_URI = "http://$PROXY_HOST:$HTTP_SERVER_PORT/"
 

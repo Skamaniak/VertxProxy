@@ -16,8 +16,9 @@ import java.io.File
 @RunWith(VertxUnitRunner::class)
 class PersistenceServiceTest {
 
+    @Rule
+    @JvmField
     val tempFolder = TemporaryFolder()
-        @Rule get
 
     private lateinit var vertx: Vertx
     private lateinit var service: PersistenceService

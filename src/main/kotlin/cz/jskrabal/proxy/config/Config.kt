@@ -16,8 +16,8 @@ data class PersistenceConfig(
 
 data class ProxyConfig(
         @NotEmpty val host: String = "0.0.0.0",
-        val nextHttpProxy: NetworkConfig?,
-        val nextTunnelProxy: NetworkConfig?,
+        val nextHttpProxy: NetworkConfig? = null,
+        val nextTunnelProxy: NetworkConfig? = null,
         @NotNull val idGenerator: IdGeneratorType = IdGeneratorType.RANDOM,
         @NotNull val customHeaders: CustomHeadersConfig = CustomHeadersConfig(),
         @NotNull val stream: StreamConfig = StreamConfig()

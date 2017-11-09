@@ -9,6 +9,7 @@ import io.vertx.codegen.annotations.Fluent
 import io.vertx.codegen.annotations.ProxyGen
 import io.vertx.core.*
 import io.vertx.core.json.JsonObject
+import io.vertx.core.shareddata.LocalMap
 import io.vertx.serviceproxy.ProxyHelper
 import kotlin.collections.set
 
@@ -32,9 +33,10 @@ interface ProxyService {
 
 }
 
-class ProxyServiceImpl(private val vertx: Vertx, private val config: ProxyConfig) : ProxyService {
-    private val proxyRegistry = vertx.sharedData().getLocalMap<String, JsonObject>("proxy-registry")
-    private val persistenceService = PersistenceServiceFactory.createProxy(vertx, PersistenceServiceVerticle.SERVICE_ADDRESS)
+class ProxyServiceImpl(private val vertx: Vertx,
+                       private val config: ProxyConfig,
+                       private val proxyRegistry: LocalMap<String, JsonObject> = vertx.sharedData().getLocalMap<String, JsonObject>("proxy-registry"),
+                       private val persistenceService: PersistenceService = PersistenceServiceFactory.createProxy(vertx, PersistenceServiceVerticle.SERVICE_ADDRESS)) : ProxyService {
 
     override fun deployProxy(proxy: JsonObject, result: Handler<AsyncResult<String>>): ProxyService {
         val mapped = proxy.mapTo(Proxy::class.java)

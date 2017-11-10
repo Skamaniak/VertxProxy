@@ -91,9 +91,9 @@ There is a full explanation of each configuration option
 ##### Intellij Idea
 - Open Run/Debug Configuration window
 - Add new Application run configuration
-- Set Main class to `io.vertx.core.Launcher`
+- Set Main class to `cz.jskrabal.proxy.Starter`
 - Set VM arguments to `-Dvertx.logger-delegate-factory-class-name=io.vertx.core.logging.Log4j2LogDelegateFactory`
-- Set Program arguments to `run cz.jskrabal.proxy.Node -conf src/main/resources/conf/default-proxy.json`
+- Set Program arguments to `run cz.jskrabal.proxy.verticle.NodeVerticle -conf src/main/resources/conf/default-proxy.json`
 - Set Working directory to the root directory of a project
 - Set JRE to Java 8
 ![Run configuration for IntelliJ Idea](/documentation/readme/RunConfigExampleIdea.png?raw=true "configuration example")

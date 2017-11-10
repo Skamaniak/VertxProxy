@@ -130,14 +130,12 @@ abstract class Transfer protected constructor(protected val vertx: Vertx,
     }
 
     //FIXME possible security issue - revealing implementation details to the proxy client.
-    private fun getErrorMessage(throwable: Throwable?): String {
+    private fun getErrorMessage(throwable: Throwable): String {
         var errorMessage = "Connection to remote server has failed due to "
-        errorMessage += if (throwable == null) {
-            "unknown error"
-        } else {
+        errorMessage += {
             val throwableMessage = throwable.message
             if (throwableMessage == null) {
-                "'${throwable.javaClass}' with no message"
+                "'${throwable.javaClass.simpleName}' with no message"
             } else {
                 "nested exception $throwableMessage"
             }

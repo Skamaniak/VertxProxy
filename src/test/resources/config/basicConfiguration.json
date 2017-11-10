@@ -1,11 +1,7 @@
 {
-  "network": {
-    "port": 8080,
-    "host": "localhost"
-  },
   "stream": {
     "downstream": {
-      "httpRequestTimeoutMillis" : 500
+      "httpRequestTimeoutMillis": 500
     }
   }
 }

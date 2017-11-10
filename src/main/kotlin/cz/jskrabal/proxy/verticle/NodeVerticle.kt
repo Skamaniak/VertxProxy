@@ -1,30 +1,21 @@
-package cz.jskrabal.proxy
+package cz.jskrabal.proxy.verticle
 
-import com.fasterxml.jackson.module.kotlin.registerKotlinModule
 import cz.jskrabal.proxy.config.NodeConfig
-import cz.jskrabal.proxy.verticle.PersistenceServiceVerticle
-import cz.jskrabal.proxy.verticle.ProxyServiceVerticle
-import cz.jskrabal.proxy.verticle.RestVerticle
-import cz.jskrabal.proxy.verticle.TypedConfigurationVerticle
+import cz.jskrabal.proxy.deployVerticleFuture
+import cz.jskrabal.proxy.loggerFor
+import cz.jskrabal.proxy.sendAction
 import io.vertx.core.CompositeFuture
 import io.vertx.core.Future
-import io.vertx.core.json.Json
 
 
-class Node : TypedConfigurationVerticle<NodeConfig>() {
+class NodeVerticle : TypedConfigurationVerticle<NodeConfig>() {
 
     override val configClass = NodeConfig::class
 
     override fun start(startFuture: Future<Void>) {
-        val logger = loggerFor<Node>()
+        val logger = loggerFor<NodeVerticle>()
 
         logger.info("Starting Proxy Node")
-
-        Json.mapper.registerKotlinModule()
-
-        vertx.exceptionHandler {
-            logger.error("Uncaught exception", it)
-        }
 
         val persistenceFuture = vertx.deployVerticleFuture(PersistenceServiceVerticle(config.persistence))
         val proxyFuture = vertx.deployVerticleFuture(ProxyServiceVerticle(config.proxy))
@@ -39,4 +30,5 @@ class Node : TypedConfigurationVerticle<NodeConfig>() {
             }
         }
     }
+
 }

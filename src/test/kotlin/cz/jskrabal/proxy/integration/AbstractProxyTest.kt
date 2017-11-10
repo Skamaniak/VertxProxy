@@ -1,15 +1,17 @@
 package cz.jskrabal.proxy.integration
 
-import cz.jskrabal.proxy.verticle.ProxyVerticle
+import com.fasterxml.jackson.module.kotlin.registerKotlinModule
+import cz.jskrabal.proxy.config.ProxyConfig
+import cz.jskrabal.proxy.model.Proxy
 import cz.jskrabal.proxy.support.ProxyTestUtils
 import cz.jskrabal.proxy.support.ResponseType
 import cz.jskrabal.proxy.support.TestHttpServerVerticle
 import cz.jskrabal.proxy.support.TestServerRequest
-import io.vertx.core.DeploymentOptions
+import cz.jskrabal.proxy.verticle.ProxyVerticle
 import io.vertx.core.Handler
 import io.vertx.core.Vertx
 import io.vertx.core.http.HttpClientResponse
-import io.vertx.core.json.JsonObject
+import io.vertx.core.json.Json
 import io.vertx.ext.unit.TestContext
 import io.vertx.ext.unit.junit.VertxUnitRunner
 import org.apache.commons.io.IOUtils
@@ -30,12 +32,15 @@ abstract class AbstractProxyTest(private val configPath: String) {
     @Before
     @Throws(IOException::class)
     fun setUp(context: TestContext) {
+        Json.mapper.registerKotlinModule()
+
         vertx = Vertx.vertx()
+
         val async = context.async(2)
 
         val configuration = readTestConfig(configPath)
-        val options = DeploymentOptions().setConfig(configuration)
-        vertx.deployVerticle(ProxyVerticle::class.java.name, options) { result ->
+        val proxyVerticle = ProxyVerticle(Proxy("testProxyVerticle"), configuration)
+        vertx.deployVerticle(proxyVerticle) { result ->
             context.asyncAssertSuccess<String>().handle(result)
             async.countDown()
         }
@@ -63,11 +68,11 @@ abstract class AbstractProxyTest(private val configPath: String) {
     }
 
     @Throws(IOException::class)
-    private fun readTestConfig(path: String): JsonObject {
+    private fun readTestConfig(path: String): ProxyConfig {
         val configStream = AbstractProxyTest::class.java.getResourceAsStream(path)
         val configurationJson = IOUtils.toString(configStream)
 
-        return JsonObject(configurationJson)
+        return Json.mapper.readValue(configurationJson, ProxyConfig::class.java)
     }
 
     private fun executeWithBody(request: TestServerRequest, responseHandler: Handler<HttpClientResponse>,

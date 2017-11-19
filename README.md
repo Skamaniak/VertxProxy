@@ -87,12 +87,17 @@ There is a full explanation of each configuration option
 |addForwardedForHeaders|false|Appends header **X-Forwarded-For-Ip** and **X-Forwarded-For-Port** to each request and response. Headers contain information about the sender.|
 |addForwardedByHeaders|false|Appends header **X-Forwarded-By-Ip** and **X-Forwarded-By-Port** to each request and response. Headers contain information about proxy.|
 
+## Known Issues
+### Sometimes the request is blocked with `UnknownHostException: failed to resolve '...'. Exceeded max queries per resolve 4`
+This is problem of the Vert.x DNS resolver. It is basically throttling when there is a lot of resolution requests at the same time (which is typical for proxy).
+Use -Dvertx.disableDnsResolver=true to instruct Vert.x to use built-in java DNS resolution instead. This fixes the problem.
+
 ## Run in IDE
 ##### Intellij Idea
 - Open Run/Debug Configuration window
 - Add new Application run configuration
 - Set Main class to `cz.jskrabal.proxy.Starter`
-- Set VM arguments to `-Dvertx.logger-delegate-factory-class-name=io.vertx.core.logging.Log4j2LogDelegateFactory`
+- Set VM arguments to `-Dvertx.logger-delegate-factory-class-name=io.vertx.core.logging.Log4j2LogDelegateFactory -Dvertx.disableDnsResolver=true`
 - Set Program arguments to `run cz.jskrabal.proxy.verticle.NodeVerticle -conf src/main/resources/conf/default-proxy.json`
 - Set Working directory to the root directory of a project
 - Set JRE to Java 8
